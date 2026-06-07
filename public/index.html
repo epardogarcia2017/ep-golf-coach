@@ -255,6 +255,23 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .btn-cancel-yes{flex:2;background:none;border:1px solid rgba(192,57,43,.4);color:var(--red);font-family:'Jost',sans-serif;font-size:.68rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;padding:.62rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
 .btn-cancel-yes:hover{background:rgba(192,57,43,.08)}
 
+
+/* COMMENTS */
+.comments-section{border-top:1px solid var(--border);padding:.8rem 1.1rem}
+.comments-toggle{background:none;border:none;color:var(--text-sm);font-family:'Jost',sans-serif;font-size:.68rem;cursor:pointer;transition:color .2s;padding:0;letter-spacing:.05em}
+.comments-toggle:hover{color:var(--gold)}
+.comments-list{margin-top:.8rem;display:flex;flex-direction:column;gap:.6rem}
+.comment-item{background:var(--surface);border-radius:var(--r);padding:.6rem .8rem}
+.comment-author{font-size:.65rem;font-weight:600;color:var(--gold);margin-bottom:.2rem;letter-spacing:.05em}
+.comment-text{font-size:.76rem;color:var(--text-md);line-height:1.5}
+.comment-date{font-size:.6rem;color:var(--text-xs);margin-top:.2rem}
+.comment-input-row{display:flex;gap:.5rem;margin-top:.7rem}
+.comment-input{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Jost',sans-serif;font-size:.78rem;padding:.5rem .7rem;border-radius:var(--r);outline:none;transition:border-color .2s}
+.comment-input:focus{border-color:var(--border-strong)}
+.comment-input::placeholder{color:var(--text-xs)}
+.btn-comment{background:var(--gold);color:var(--black);border:none;font-family:'Jost',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.45rem .8rem;cursor:pointer;border-radius:var(--r);transition:all .2s;white-space:nowrap;flex-shrink:0}
+.btn-comment:hover{background:var(--gold-lt)}
+
 /* COMMUNITY */
 .com-layout{display:grid;grid-template-columns:1fr 300px;gap:0;min-height:calc(100vh - 60px)}
 @media(max-width:900px){.com-layout{grid-template-columns:1fr}}
@@ -381,7 +398,7 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 
 /* FOOTER */
 footer{border-top:1px solid var(--border);padding:1.8rem 3rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.8rem}
-@media(max-width:600px){footer{padding:1.5rem 1.5rem}}
+@media(max-width:700px){footer{padding:1.5rem 1.5rem 5rem}}
 .ft-brand{font-family:'Cormorant Garamond',serif;font-size:.95rem;color:var(--text-sm);letter-spacing:.1em}
 .ft-brand em{font-style:italic;color:var(--gold)}
 .ft-links{display:flex;gap:1.4rem}
@@ -619,15 +636,10 @@ footer{border-top:1px solid var(--border);padding:1.8rem 3rem;display:flex;align
           <div class="stat-row"><div class="stat-k">Alumnos activos</div><div class="stat-v" id="stat-alumnos">—</div></div>
           <div class="stat-row"><div class="stat-k">Clases este mes</div><div class="stat-v" id="stat-clases">—</div></div>
           <div class="stat-row"><div class="stat-k">Publicaciones</div><div class="stat-v" id="stat-posts">—</div></div>
-          <div class="stat-row"><div class="stat-k">Sedes</div><div class="stat-v">3</div></div>
+
         </div>
       </div>
-      <div class="side-sec">
-        <div class="side-lbl">Sedes</div>
-        <div class="side-card"><div class="side-card-name">San Sebastián</div><div class="side-card-sub">San Antonio de Areco</div></div>
-        <div class="side-card"><div class="side-card-name">Reserva Cardales</div><div class="side-card-sub">Los Cardales, Bs. As.</div></div>
-        <div class="side-card"><div class="side-card-name">El Bosque</div><div class="side-card-sub">Buenos Aires</div></div>
-      </div>
+
       <div class="side-sec">
         <div class="side-lbl">Tecnología</div>
         <div class="side-card" style="padding:.85rem 1.1rem">
@@ -864,10 +876,22 @@ window.addEventListener('load', async ()=>{
 });
 
 async function loadUserProfile(){
+  // isAdmin is based on email, regardless of profile
+  isAdmin = (currentUser.email === ADMIN_EMAIL);
   const {data} = await sb.from('profiles').select('*').eq('id',currentUser.id).single();
   if(data){
     userProfile = data;
-    isAdmin = currentUser.email === ADMIN_EMAIL;
+  } else {
+    // Create profile if missing
+    const parts = currentUser.email.split('@')[0].split('.');
+    const autoProfile = {
+      id: currentUser.id,
+      email: currentUser.email,
+      nombre: parts[0]||'',
+      apellido: parts[1]||'',
+    };
+    await sb.from('profiles').upsert(autoProfile);
+    userProfile = autoProfile;
   }
 }
 
@@ -877,10 +901,16 @@ function showApp(){
   updateNavUI();
   renderCal();
   updateNotifDot();
+  applyAdminUI();
+}
+
+function applyAdminUI(){
   if(isAdmin){
     document.getElementById('pnav-admin').style.display='flex';
     document.getElementById('admin-stats-sec').style.display='block';
     document.getElementById('composer').classList.add('admin-visible');
+    // Update role label
+    document.getElementById('prf-role').textContent = 'Instructor · EP Golf Coach';
   }
 }
 
@@ -1147,6 +1177,8 @@ async function doConfirm(){
   await sendNotifications(data);
   showToast('¡Clase reservada! Te llegará una notificación de confirmación.','success');
   updateNotifDot();loadSlots();
+  // Auto-download ICS for admin
+  if(isAdmin) autoDownloadAdminICS(data);
 }
 
 // ============================================================
@@ -1215,25 +1247,35 @@ function scheduleLocalReminder(bk){
 // ============================================================
 // ICS
 // ============================================================
-function downloadICS(bk){
+function downloadICS(bk, forAdmin=false){
   const b=bk||lastBooking;if(!b)return;
   const dt=new Date(b.date_iso||b.dateISO);
   const fDT=(d,h)=>`${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}T${p2(h)}0000`;
+  // Admin title: "Nombre Apellido - Modalidad", User title: "Modalidad - EP Golf Coach"
+  const adminTitle=`${b.user_name||b.userName||'Alumno'} · ${b.modality_name||b.modName}`;
+  const userTitle=`${b.modality_name||b.modName} — EP Golf Coach`;
+  const summary = (isAdmin || forAdmin) ? adminTitle : userTitle;
   const ics=[
     'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//EP Golf Coach//ES',
     'BEGIN:VEVENT',`UID:${b.id}@epgolfcoach`,
     `DTSTART:${fDT(dt,b.slot)}`,`DTEND:${fDT(dt,b.slot+1)}`,
-    `SUMMARY:${b.modality_name||b.modName} — EP Golf Coach`,
-    'DESCRIPTION:Clase con Eze Pardo. Cancelación mínimo 24hs antes.',
+    `SUMMARY:${summary}`,
+    `DESCRIPTION:${isAdmin?'Alumno: '+(b.user_name||'')+'\n':''}Clase EP Golf Coach.\nPolítica: cancelar con min 24hs.`,
     'LOCATION:Buenos Aires, Argentina',
     'BEGIN:VALARM','TRIGGER:-PT24H','ACTION:DISPLAY',
-    `DESCRIPTION:Recordatorio: clase de ${b.modality_name||b.modName} mañana`,
+    `DESCRIPTION:Recordatorio: ${summary} mañana`,
     'END:VALARM','END:VEVENT','END:VCALENDAR'
   ].join('\r\n');
   const a=document.createElement('a');
   a.href='data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
   a.download='clase-ep-golf-'+(b.date_key||b.dateKey)+'.ics';a.click();
   showToast('.ics descargado — abrilo para agregar a Calendario Apple','success');
+}
+
+// Auto-download ICS for admin when booking is confirmed
+function autoDownloadAdminICS(bk){
+  if(!isAdmin) return;
+  setTimeout(()=>downloadICS(bk, true), 1500);
 }
 
 function resetFlow(){
@@ -1331,17 +1373,43 @@ function openCancelModal(id,mod,dateDisp,slotLbl){
   document.getElementById('cancel-modal-bg').classList.add('open');
 }
 
-function closeCancelModal(){document.getElementById('cancel-modal-bg').classList.remove('open');pendingCancelId=null;}
+function closeCancelModal(){
+  document.getElementById('cancel-modal-bg').classList.remove('open');
+  pendingCancelId=null;
+  const btn=document.getElementById('btn-cancel-yes');
+  if(btn){btn.textContent='Confirmar cancelación';delete btn.dataset.paymentConfirmed;}
+}
 
 async function doCancel(){
   if(!pendingCancelId)return;
+  // Check if late cancellation - require payment confirmation
+  const {data:bkData} = await sb.from('bookings').select('date_iso,slot,modality,status').eq('id',pendingCancelId).single();
+  if(bkData){
+    const classTime=new Date(bkData.date_iso);
+    classTime.setHours(bkData.slot,0,0,0);
+    const isLate=(classTime-new Date())/3600000<24;
+    if(isLate){
+      // Show payment required step
+      document.getElementById('cancel-warn').style.display='block';
+      const price=MP_PRICES[bkData.modality]||35000;
+      document.getElementById('mp-amount-txt').textContent='$'+price.toLocaleString('es-AR')+' ARS';
+      // Change button to require payment confirmation
+      const btn=document.getElementById('btn-cancel-yes');
+      if(!btn.dataset.paymentConfirmed){
+        btn.textContent='Ya pagué — confirmar cancelación';
+        btn.dataset.paymentConfirmed='pending';
+        showToast('Primero realizá el pago a Mercado Pago y después confirmá la cancelación','warn');
+        return;
+      }
+    }
+  }
   const btn=document.getElementById('btn-cancel-yes');
   btn.textContent='Cancelando...';btn.disabled=true;
   const {error}=await sb.from('bookings').update({status:'cancelled'}).eq('id',pendingCancelId);
   btn.textContent='Confirmar cancelación';btn.disabled=false;
+  delete btn.dataset.paymentConfirmed;
   closeCancelModal();
   if(error){showToast('Error al cancelar','error');return;}
-  // Notify admin of cancellation
   await sb.from('notifications').insert({
     user_id:null,type:'booking_cancelled',
     title:'❌ Clase cancelada',
@@ -1364,7 +1432,7 @@ async function loadPosts(){
     return;
   }
   feed.innerHTML=data.map(p=>`
-    <div class="post">
+    <div class="post" id="post-${p.id}">
       <div class="post-type-bar ${PTCSS[p.type]||'pt-news'}">${PTLABEL[p.type]||'Publicación'}</div>
       <div class="post-body">
         <div class="post-title">${p.title}</div>
@@ -1374,6 +1442,14 @@ async function loadPosts(){
         <div class="post-meta">
           <span>${new Date(p.created_at).toLocaleDateString('es-AR')}</span>
           <button class="like-btn ${p.liked_by?.includes(currentUser?.id)?'liked':''}" onclick="toggleLike('${p.id}',this)">❤ ${p.likes||0}</button>
+        </div>
+        <button class="comments-toggle" onclick="toggleComments('${p.id}')">💬 Comentarios</button>
+      </div>
+      <div class="comments-section" id="comments-${p.id}" style="display:none">
+        <div class="comments-list" id="comments-list-${p.id}"><div style="font-size:.72rem;color:var(--text-xs)">Cargando...</div></div>
+        <div class="comment-input-row">
+          <input class="comment-input" id="comment-input-${p.id}" type="text" placeholder="Escribí un comentario...">
+          <button class="btn-comment" onclick="submitComment('${p.id}')">Enviar</button>
         </div>
       </div>
     </div>
@@ -1395,6 +1471,46 @@ async function toggleLike(id,btn){
   const cur=parseInt(btn.textContent.replace(/[^\d]/g,''))||0;
   btn.textContent='❤ '+(liked?cur-1:cur+1);
   await sb.from('posts').update({likes:liked?cur-1:cur+1}).eq('id',id);
+}
+
+async function toggleComments(postId){
+  const sec = document.getElementById('comments-'+postId);
+  if(sec.style.display==='none'){
+    sec.style.display='block';
+    await loadComments(postId);
+  } else {
+    sec.style.display='none';
+  }
+}
+
+async function loadComments(postId){
+  const {data} = await sb.from('comments').select('*').eq('post_id',postId).order('created_at',{ascending:true});
+  const con = document.getElementById('comments-list-'+postId);
+  if(!data?.length){con.innerHTML='<div style="font-size:.72rem;color:var(--text-xs);font-style:italic">Sé el primero en comentar</div>';return;}
+  con.innerHTML = data.map(cm=>`
+    <div class="comment-item">
+      <div class="comment-author">${cm.author_name||'Alumno'}</div>
+      <div class="comment-text">${cm.body}</div>
+      <div class="comment-date">${new Date(cm.created_at).toLocaleDateString('es-AR')}</div>
+    </div>
+  `).join('');
+}
+
+async function submitComment(postId){
+  const input = document.getElementById('comment-input-'+postId);
+  const body = input.value.trim();
+  if(!body) return;
+  const authorName = ((userProfile?.nombre||'')+' '+(userProfile?.apellido||'')).trim() || currentUser.email.split('@')[0];
+  const {error} = await sb.from('comments').insert({
+    post_id: postId,
+    user_id: currentUser.id,
+    author_name: authorName,
+    body
+  });
+  if(error){showToast('Error al comentar','error');return;}
+  input.value='';
+  await loadComments(postId);
+  showToast('Comentario enviado','success');
 }
 
 async function publishPost(){
