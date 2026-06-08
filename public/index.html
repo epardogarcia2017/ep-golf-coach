@@ -380,6 +380,24 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .btn-notif-allow{background:var(--gold);color:var(--black);border:none;font-family:'Jost',sans-serif;font-size:.66rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.38rem .85rem;cursor:pointer;border-radius:var(--r);transition:all .2s;white-space:nowrap}
 .btn-notif-allow:hover{background:var(--gold-lt)}
 
+
+/* NOTIF PROMPT BANNER */
+#notif-prompt{position:fixed;top:70px;left:1rem;right:1rem;z-index:200;
+  background:var(--ink);border:1px solid var(--border-strong);border-radius:var(--rm);
+  padding:1.2rem 1.4rem;display:none;align-items:center;gap:1rem;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);animation:slideDown .4s var(--ease);flex-wrap:wrap}
+#notif-prompt.show{display:flex}
+@keyframes slideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+.notif-prompt-icon{font-size:1.6rem;flex-shrink:0}
+.notif-prompt-info{flex:1}
+.notif-prompt-title{font-size:.88rem;font-weight:500;color:var(--text);margin-bottom:.2rem}
+.notif-prompt-sub{font-size:.76rem;color:var(--text-md);line-height:1.45}
+.notif-prompt-actions{display:flex;gap:.6rem;flex-shrink:0}
+.btn-notif-yes{background:var(--gold);color:var(--black);border:none;font-family:'Jost',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.45rem 1rem;cursor:pointer;border-radius:var(--r);transition:all .2s;white-space:nowrap}
+.btn-notif-yes:hover{background:var(--gold-lt)}
+.btn-notif-no{background:none;border:1px solid var(--border);color:var(--text-xs);font-family:'Jost',sans-serif;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;padding:.42rem .8rem;cursor:pointer;border-radius:var(--r);transition:all .2s;white-space:nowrap}
+.btn-notif-no:hover{color:var(--text-sm);border-color:var(--border-md)}
+
 /* iOS INSTALL */
 #ios-banner{position:fixed;bottom:70px;left:1rem;right:1rem;z-index:200;background:var(--ink);border:1px solid var(--border-strong);border-radius:var(--rm);padding:1rem 1.2rem;display:none;align-items:flex-start;gap:.9rem;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:slideUp .4s var(--ease)}
 #ios-banner.show{display:flex}
@@ -796,6 +814,19 @@ footer{border-top:1px solid var(--border);padding:1.8rem 3rem;display:flex;align
   <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
 </a>
 
+<!-- NOTIFICATION PROMPT -->
+<div id="notif-prompt">
+  <div class="notif-prompt-icon">🔔</div>
+  <div class="notif-prompt-info">
+    <div class="notif-prompt-title">Activar notificaciones</div>
+    <div class="notif-prompt-sub">Recibí confirmaciones y recordatorios de tus clases 24hs antes</div>
+  </div>
+  <div class="notif-prompt-actions">
+    <button class="btn-notif-yes" onclick="acceptNotifPrompt()">Activar</button>
+    <button class="btn-notif-no" onclick="dismissNotifPrompt()">Ahora no</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -904,6 +935,19 @@ function showApp(){
   applyAdminUI();
   reRegisterPushIfNeeded();
   updateNotifStatusUI();
+  // Ask for notifications on first login only
+  if(!localStorage.getItem('notif-asked')){
+    setTimeout(()=>{
+      localStorage.setItem('notif-asked','1');
+      if(Notification.permission==='default'){
+        showNotifPrompt();
+      }
+    }, 2500);
+  }
+}
+
+function showNotifPrompt(){
+  document.getElementById('notif-prompt').classList.add('show');
 }
 
 function applyAdminUI(){
@@ -1291,22 +1335,34 @@ function scheduleLocalReminder(bk){
 // ICS
 // ============================================================
 function downloadCancelICS(bk){
-  // Download ICS with CANCELLED status - removes event from Apple Calendar
   const b=bk;if(!b)return;
   const dt=new Date(b.date_iso||b.dateISO);
   const fDT=(d,h)=>`${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}T${p2(h)}0000`;
-  const summary=isAdmin?`${b.user_name||'Alumno'} · ${b.modality_name||b.modName}`:`${b.modality_name||b.modName} — EP Golf Coach`;
+  const summary=isAdmin?`${b.user_name||b.user_name||'Alumno'} · ${b.modality_name||b.modName}`:`${b.modality_name||b.modName} — EP Golf Coach`;
+  // Use same UID as original booking so Calendar matches and deletes it
+  const uid = (b.id||b.dateKey)+'@epgolfcoach';
   const ics=[
-    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//EP Golf Coach//ES','METHOD:CANCEL',
-    'BEGIN:VEVENT',`UID:${b.id}@epgolfcoach`,
-    `DTSTART:${fDT(dt,b.slot)}`,`DTEND:${fDT(dt,b.slot+1)}`,
-    `SUMMARY:${summary}`,'STATUS:CANCELLED','SEQUENCE:1',
-    'END:VEVENT','END:VCALENDAR'
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//EP Golf Coach//ES',
+    'METHOD:CANCEL',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g,'').split('.')[0]}Z`,
+    `DTSTART:${fDT(dt,b.slot)}`,
+    `DTEND:${fDT(dt,b.slot+1)}`,
+    `SUMMARY:${summary} (CANCELADA)`,
+    'STATUS:CANCELLED',
+    'SEQUENCE:2',
+    `ORGANIZER:mailto:${ADMIN_EMAIL}`,
+    'END:VEVENT',
+    'END:VCALENDAR'
   ].join('\r\n');
   const a=document.createElement('a');
   a.href='data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
-  a.download='cancelacion-ep-golf-'+(b.date_key||b.dateKey)+'.ics';a.click();
-  showToast('Descargá el .ics de cancelación para eliminarlo de tu calendario','');
+  a.download='cancelacion-ep-golf-'+(b.date_key||b.dateKey)+'.ics';
+  a.click();
+  showToast('Abrí el archivo .ics descargado para eliminar el evento de tu calendario','');
 }
 
 function downloadICS(bk, forAdmin=false){
@@ -1509,13 +1565,14 @@ async function loadPosts(){
           <span>${new Date(p.created_at).toLocaleDateString('es-AR')}</span>
           <button class="like-btn ${p.liked_by?.includes(currentUser?.id)?'liked':''}" onclick="toggleLike('${p.id}',this)">❤ ${p.likes||0}</button>
         </div>
-        <button class="comments-toggle" onclick="toggleComments('${p.id}')">💬 Comentarios</button>
+        <button class="comments-toggle" id="toggle-${p.id}" onclick="toggleComments('${p.id}')">💬 Comentarios</button>
       </div>
       <div class="comments-section" id="comments-${p.id}" style="display:none">
-        <div class="comments-list" id="comments-list-${p.id}"><div style="font-size:.72rem;color:var(--text-xs)">Cargando...</div></div>
+        <div class="comments-list" id="comments-list-${p.id}"></div>
         <div class="comment-input-row">
-          <input class="comment-input" id="comment-input-${p.id}" type="text" placeholder="Escribí un comentario...">
-          <button class="btn-comment" onclick="submitComment('${p.id}')">Enviar</button>
+          <div class="comment-input-avatar">${((userProfile?.nombre||currentUser?.email||'U')[0]).toUpperCase()}</div>
+          <input class="comment-input" id="comment-input-${p.id}" type="text" placeholder="Agregá un comentario..." onkeydown="if(event.key==='Enter')submitComment('${p.id}')">
+          <button class="btn-comment" onclick="submitComment('${p.id}')">Publicar</button>
         </div>
       </div>
     </div>
@@ -1552,14 +1609,26 @@ async function toggleComments(postId){
 async function loadComments(postId){
   const {data} = await sb.from('comments').select('*').eq('post_id',postId).order('created_at',{ascending:true});
   const con = document.getElementById('comments-list-'+postId);
-  if(!data?.length){con.innerHTML='<div style="font-size:.72rem;color:var(--text-xs);font-style:italic">Sé el primero en comentar</div>';return;}
-  con.innerHTML = data.map(cm=>`
-    <div class="comment-item">
-      <div class="comment-author">${cm.author_name||'Alumno'}</div>
-      <div class="comment-text">${cm.body}</div>
-      <div class="comment-date">${new Date(cm.created_at).toLocaleDateString('es-AR')}</div>
-    </div>
-  `).join('');
+  if(!data?.length){con.innerHTML='<div class="comments-empty">Sé el primero en comentar</div>';return;}
+  const myInitial = ((userProfile?.nombre||currentUser?.email||'U')[0]).toUpperCase();
+  con.innerHTML = data.map(cm=>{
+    const initial = (cm.author_name||'A')[0].toUpperCase();
+    const date = new Date(cm.created_at);
+    const dateStr = date.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+    return `<div class="comment-item">
+      <div class="comment-avatar">${initial}</div>
+      <div class="comment-bubble">
+        <div class="comment-header">
+          <span class="comment-author">${cm.author_name||'Alumno'}</span>
+          <span class="comment-date">${dateStr}</span>
+        </div>
+        <div class="comment-text">${cm.body}</div>
+      </div>
+    </div>`;
+  }).join('');
+  // Update toggle count
+  const toggle = document.getElementById('toggle-'+postId);
+  if(toggle) toggle.textContent = '💬 '+data.length+(data.length===1?' comentario':' comentarios');
 }
 
 async function submitComment(postId){
@@ -1670,6 +1739,15 @@ function handleNotifAction(){
   requestNotifPermission();
 }
 
+function acceptNotifPrompt(){
+  document.getElementById('notif-prompt').classList.remove('show');
+  requestNotifPermission();
+}
+
+function dismissNotifPrompt(){
+  document.getElementById('notif-prompt').classList.remove('show');
+}
+
 async function requestNotifPermission(){
   const perm=await Notification.requestPermission();
   updateNotifStatusUI();
@@ -1711,15 +1789,8 @@ async function reRegisterPushIfNeeded(){
     try{
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
-      if(!sub){
-        // Re-subscribe silently
-        await reg.showNotification('EP Golf Coach',{
-          body:'Notificaciones reactivadas ✓',
-          icon:'/icon-192.png',
-          tag:'reactivate',
-          silent:true
-        });
-      }
+      // Sub exists or not - no notification on open
+      console.log('Push subscription status:', sub ? 'active' : 'inactive');
     }catch(e){}
   }
 }
