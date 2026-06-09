@@ -839,6 +839,7 @@ const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ADMIN_EMAIL = 'epardogarcia2017@gmail.com';
+const VAPID_PUBLIC_KEY = 'BBllvCIim7nx3lwYvVP9HRfn8BGLb0Mq4VSJAkmoJJatj3d_h59o7FwAxAjwABUIU1jIFpOBTWBaE4wMMBM3q4o';
 const MP_ALIAS = 'ezequiel.pardo.32';
 const MP_PRICES = { driving:35000, putter:35000, cancha:43000 };
 
@@ -1260,6 +1261,8 @@ async function doConfirm(){
   document.getElementById('btn-m-cancel').onclick=()=>{closeModal();resetFlow();};
   // Send notifications
   await sendNotifications(data);
+  // Trigger server-side push to admin
+  await sendAdminPushViaServer(data);
   showToast('¡Clase reservada! Te llegará una notificación de confirmación.','success');
   updateNotifDot();loadSlots();
   // Auto-download ICS for admin
@@ -1269,6 +1272,44 @@ async function doConfirm(){
 // ============================================================
 // NOTIFICATIONS via Supabase Edge Function
 // ============================================================
+async function sendAdminPushViaServer(bk){
+  try{
+    // Get admin push subscription from DB
+    const {data:subs} = await sb.from('push_subscriptions')
+      .select('subscription').eq('email', ADMIN_EMAIL).limit(1);
+    if(!subs?.length) return;
+    // Call Vercel API to send push
+    await fetch('/api/notify', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        subscription: subs[0].subscription,
+        title: '🏌️ Nueva reserva — EP Golf Coach',
+        body: (bk.user_name||bk.user_email)+' · '+bk.modality_name+' · '+bk.date_display+' · '+bk.slot_label+' hs',
+        tag: 'new-booking-'+bk.id
+      })
+    });
+  }catch(e){console.log('Server push error:',e);}
+}
+
+async function sendCancelPushToAdmin(bk){
+  try{
+    const {data:subs} = await sb.from('push_subscriptions')
+      .select('subscription').eq('email', ADMIN_EMAIL).limit(1);
+    if(!subs?.length) return;
+    await fetch('/api/notify', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        subscription: subs[0].subscription,
+        title: '❌ Clase cancelada — EP Golf Coach',
+        body: (bk.user_name||bk.user_email)+' canceló '+bk.modality_name+' · '+bk.date_display,
+        tag: 'cancel-'+bk.id
+      })
+    });
+  }catch(e){}
+}
+
 async function sendNotifications(bk){
   try{
     // User confirmation notification (local push)
@@ -1539,8 +1580,10 @@ async function doCancel(){
   showToast('Clase cancelada','');
   loadAndRenderBookings(S.bkFilter);
   updateNotifDot();
-  // Auto-download cancel ICS so event is removed from calendar
-  if(cancelledBk) downloadCancelICS(cancelledBk);
+  if(cancelledBk){
+    downloadCancelICS(cancelledBk);
+    await sendCancelPushToAdmin(cancelledBk);
+  }
 }
 
 // ============================================================
