@@ -245,8 +245,6 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .notif-dot-ind.off{background:var(--red)}
 .notif-dot-ind.pending{background:var(--amber)}
 .notif-btn-group{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
-.btn-notif-off{background:none;border:1px solid var(--border);color:var(--text-sm);font-family:'Jost',sans-serif;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;padding:.62rem 1.3rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
-.btn-notif-off:hover{border-color:rgba(192,57,43,.5);color:var(--red)}
 .btn-notif-test{margin-top:.9rem;width:100%;background:none;border:1px solid var(--border-md);color:var(--gold);font-family:'Jost',sans-serif;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;padding:.62rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
 .btn-notif-test:hover{background:rgba(200,168,75,.07);border-color:var(--border-strong)}
 .m-foot{padding:1.1rem 1.8rem 1.6rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:.65rem}
@@ -754,10 +752,7 @@ footer{border-top:1px solid var(--border);padding:1.8rem 3rem;display:flex;align
             <span class="notif-dot-ind" id="notif-dot-ind"></span>
             <span id="notif-status-text">Cargando estado...</span>
           </div>
-          <div class="notif-btn-group">
-            <button class="btn-submit" id="btn-notif-action" onclick="handleNotifAction()">Activar notificaciones</button>
-            <button class="btn-notif-off" id="btn-notif-off" onclick="deactivateNotifications()" style="display:none">Desactivar</button>
-          </div>
+          <button class="btn-submit" id="btn-notif-action" onclick="toggleNotifications()">Activar notificaciones</button>
           <button class="btn-notif-test" id="btn-notif-test" onclick="testAdminPush()" style="display:none">🔔 Probar notificación ahora</button>
         </div>
       </div>
@@ -1919,9 +1914,23 @@ function setPNav(btn,viewId){
 // ============================================================
 // NOTIFICATIONS PERMISSION
 // ============================================================
-function handleNotifAction(){
-  requestNotifPermission();
+// Single toggle: decides whether to activate or deactivate based on state.
+async function toggleNotifications(){
+  const reg = await navigator.serviceWorker.ready.catch(()=>null);
+  let isOn = false;
+  if(reg && Notification.permission==='granted' && currentUser){
+    const sub = await reg.pushManager.getSubscription();
+    if(sub){
+      const {data} = await sb.from('push_subscriptions')
+        .select('id').eq('user_id', currentUser.id).limit(1);
+      isOn = !!(data && data.length);
+    }
+  }
+  if(isOn) await deactivateNotifications();
+  else     await requestNotifPermission();
 }
+
+function handleNotifAction(){ toggleNotifications(); }
 
 function acceptNotifPrompt(){
   document.getElementById('notif-prompt').classList.remove('show');
@@ -1934,40 +1943,75 @@ function dismissNotifPrompt(){
 
 async function requestNotifPermission(){
   const perm = await Notification.requestPermission();
-  updateNotifStatusUI();
-  if(perm === 'granted'){
-    localStorage.setItem('notif-granted','1');
-    try{
-      const reg = await navigator.serviceWorker.ready;
-      // Subscribe to push (this now works thanks to urlBase64ToUint8Array)
-      const sub = await subscribePush(reg);
-      if(!sub) throw new Error('No se pudo crear la suscripción push');
-      // Verify it actually landed in Supabase
-      let saved = false;
-      if(currentUser){
-        const {data} = await sb.from('push_subscriptions')
-          .select('id').eq('user_id', currentUser.id).limit(1);
-        saved = !!(data && data.length);
-      }
-      // Confirm notification
+  if(perm !== 'granted'){
+    localStorage.removeItem('notif-granted');
+    showToast('Permiso denegado. Activalo en Configuración → Notificaciones → EP Golf Coach','warn');
+    updateNotifStatusUI();
+    return;
+  }
+  localStorage.setItem('notif-granted','1');
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    // Subscribe + save to Supabase. If saving fails, subscribePush throws
+    // with the REAL error message so we can show it on screen.
+    const sub = await subscribePush(reg);
+    if(!sub) throw new Error('No se pudo crear la suscripción');
+    // Confirm it landed in Supabase
+    let saved = false;
+    if(currentUser){
+      const {data} = await sb.from('push_subscriptions')
+        .select('id').eq('user_id', currentUser.id).limit(1);
+      saved = !!(data && data.length);
+    }
+    if(saved){
       await reg.showNotification('✅ EP Golf Coach',{
         body:'Notificaciones activadas. Recibirás avisos de reservas y comentarios.',
-        icon:'/icon-192.png',
-        tag:'welcome'
+        icon:'/icon-192.png', tag:'welcome'
       });
-      if(saved){
-        showToast('Notificaciones activadas ✓','success');
-      }else{
-        showToast('Permiso OK, pero no se guardó la suscripción. Reintentá.','warn');
-      }
-    }catch(e){
-      console.error('Push registration error:',e);
-      showToast('Error al activar el push: '+(e?.message||e),'error');
+      showToast('Notificaciones activadas','success');
+    }else{
+      showToast('No se guardó la suscripción. Probá de nuevo en unos segundos.','warn');
     }
-  } else {
-    localStorage.removeItem('notif-granted');
-    showToast('Permiso denegado — activá las notificaciones desde Configuración','warn');
+  }catch(e){
+    console.error('Push registration error:', e);
+    // Show the real database/browser error so we can diagnose
+    showToast('Error: '+(e?.message || e), 'error');
   }
+  updateNotifStatusUI();
+}
+
+// Turn off notifications: remove this device's subscription from Supabase
+async function deactivateNotifications(){
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if(sub){ await sub.unsubscribe(); }
+    if(currentUser){
+      const {error} = await sb.from('push_subscriptions').delete().eq('user_id', currentUser.id);
+      if(error) throw new Error(error.message);
+    }
+    localStorage.removeItem('notif-granted');
+    localStorage.removeItem('push-sub');
+    showToast('Notificaciones desactivadas','');
+  }catch(e){
+    console.error('deactivate error:', e);
+    showToast('Error al desactivar: '+(e?.message||e),'error');
+  }
+  updateNotifStatusUI();
+}
+
+// Send a test push to the admin's own phone via the Edge Function
+async function testAdminPush(){
+  if(currentUser?.email !== ADMIN_EMAIL){
+    showToast('La prueba es solo para el admin','warn');
+    return;
+  }
+  showToast('Enviando notificación de prueba...','');
+  await pushToAdmin(
+    '🔔 Prueba — EP Golf Coach',
+    'Si ves esto, las notificaciones funcionan ✅',
+    'test-'+Date.now()
+  );
 }
 
 // Convert a base64 URL-safe VAPID key into the Uint8Array the browser needs.
@@ -1985,59 +2029,61 @@ function urlBase64ToUint8Array(base64String){
 }
 
 async function subscribePush(reg){
-  try{
-    // Check if already subscribed
-    let sub = await reg.pushManager.getSubscription();
-    if(!sub){
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      });
-    }
-    // Save to localStorage
-    localStorage.setItem('push-sub', JSON.stringify(sub));
-    // Save to Supabase
-    if(currentUser){
-      const {error} = await sb.from('push_subscriptions').upsert({
-        user_id: currentUser.id,
-        email: currentUser.email,
-        subscription: sub,
-        updated_at: new Date().toISOString()
-      }, {onConflict: 'user_id'});
-      if(error) console.error('Supabase push save error:', error);
-      else console.log('✅ Push subscription saved to Supabase');
-    }
-    return sub;
-  }catch(e){
-    console.error('subscribePush error:', e);
-    throw e;
+  // Get (or create) the browser push subscription
+  let sub = await reg.pushManager.getSubscription();
+  if(!sub){
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
   }
+  // Keep a local copy
+  localStorage.setItem('push-sub', JSON.stringify(sub));
+
+  // Save to Supabase WITHOUT relying on onConflict/UNIQUE:
+  // delete any previous row for this user, then insert a fresh one.
+  if(currentUser){
+    // 1) remove previous subscription(s) for this user (ignore errors here)
+    await sb.from('push_subscriptions').delete().eq('user_id', currentUser.id);
+    // 2) insert the new subscription
+    const {error} = await sb.from('push_subscriptions').insert({
+      user_id: currentUser.id,
+      email: currentUser.email,
+      subscription: sub,
+      updated_at: new Date().toISOString()
+    });
+    if(error){
+      console.error('Supabase push save error:', error);
+      // Throw so the caller can show the real message on screen
+      throw new Error(error.message || JSON.stringify(error));
+    }
+    console.log('✅ Push subscription saved to Supabase');
+  }
+  return sub;
 }
 
 async function updateNotifStatusUI(){
   const el=document.getElementById('notif-status-text');
   const btn=document.getElementById('btn-notif-action');
   const dot=document.getElementById('notif-dot-ind');
-  const offBtn=document.getElementById('btn-notif-off');
   const testBtn=document.getElementById('btn-notif-test');
   if(!el||!btn)return;
   const perm=Notification.permission;
 
   // Helper to set the colored status dot
   const setDot=(cls)=>{ if(dot){ dot.className='notif-dot-ind '+cls; } };
+  const showTest=(yes)=>{ if(testBtn) testBtn.style.display = (yes && isAdmin) ? 'block' : 'none'; };
 
   if(perm==='denied'){
     localStorage.removeItem('notif-granted');
     el.textContent='❌ Notificaciones bloqueadas. En tu iPhone: Configuración → Notificaciones → EP Golf Coach → Permitir.';
     setDot('off');
     btn.style.display='none';
-    if(offBtn) offBtn.style.display='none';
-    if(testBtn) testBtn.style.display='none';
+    showTest(false);
     return;
   }
 
   if(perm==='granted'){
-    localStorage.setItem('notif-granted','1');
     // Check whether the subscription is actually saved in Supabase
     let saved=false;
     if(currentUser){
@@ -2048,61 +2094,29 @@ async function updateNotifStatusUI(){
       }catch(e){}
     }
     if(saved){
-      el.textContent='✅ Notificaciones activadas en este dispositivo. Vas a recibir avisos de reservas y comentarios.';
+      localStorage.setItem('notif-granted','1');
+      el.textContent='Notificaciones activadas en este dispositivo. Vas a recibir avisos de reservas y comentarios.';
       setDot('on');
-      btn.textContent='✅ Activadas';btn.disabled=true;btn.style.opacity='.6';btn.style.display='none';
-      if(offBtn) offBtn.style.display='inline-flex';
-      if(testBtn) testBtn.style.display='block';
+      // Button becomes the "Desactivar" toggle
+      btn.textContent='Desactivar notificaciones';
+      btn.disabled=false;btn.style.opacity='1';btn.style.display='inline-flex';
+      showTest(true);
     }else{
-      el.textContent='⚠️ Diste permiso pero falta guardar la suscripción. Tocá "Activar" de nuevo.';
+      el.textContent='Diste permiso pero falta guardar la suscripción. Tocá "Activar notificaciones".';
       setDot('pending');
-      btn.textContent='Activar notificaciones';btn.disabled=false;btn.style.opacity='1';btn.style.display='inline-flex';
-      if(offBtn) offBtn.style.display='none';
-      if(testBtn) testBtn.style.display='none';
+      btn.textContent='Activar notificaciones';
+      btn.disabled=false;btn.style.opacity='1';btn.style.display='inline-flex';
+      showTest(false);
     }
     return;
   }
 
   // Default (not asked yet)
-  el.textContent='🔔 Activá las notificaciones para recibir avisos de reservas y comentarios.';
+  el.textContent='Activá las notificaciones para recibir avisos de reservas y comentarios.';
   setDot('off');
-  btn.textContent='Activar notificaciones';btn.disabled=false;btn.style.opacity='1';btn.style.display='inline-flex';
-  if(offBtn) offBtn.style.display='none';
-  if(testBtn) testBtn.style.display='none';
-}
-
-// Turn off notifications: remove this device's subscription from Supabase
-async function deactivateNotifications(){
-  try{
-    const reg=await navigator.serviceWorker.ready;
-    const sub=await reg.pushManager.getSubscription();
-    if(sub){ await sub.unsubscribe(); }
-    if(currentUser){
-      await sb.from('push_subscriptions').delete().eq('user_id', currentUser.id);
-    }
-    localStorage.removeItem('notif-granted');
-    localStorage.removeItem('push-sub');
-    showToast('Notificaciones desactivadas en este dispositivo','');
-    updateNotifStatusUI();
-  }catch(e){
-    console.error('deactivate error:', e);
-    showToast('No se pudieron desactivar: '+(e?.message||e),'error');
-  }
-}
-
-// Send a test push to the admin's own phone via the Edge Function
-async function testAdminPush(){
-  if(currentUser?.email !== ADMIN_EMAIL){
-    showToast('La prueba de push es solo para el admin','warn');
-    return;
-  }
-  showToast('Enviando notificación de prueba...','');
-  await pushToAdmin(
-    '🔔 Prueba — EP Golf Coach',
-    'Si ves esto, las notificaciones funcionan correctamente ✅',
-    'test-'+Date.now()
-  );
-  setTimeout(()=>showToast('Si no llegó en unos segundos, avisá','warn'), 4000);
+  btn.textContent='Activar notificaciones';
+  btn.disabled=false;btn.style.opacity='1';btn.style.display='inline-flex';
+  showTest(false);
 }
 
 // Re-register SW subscription if previously granted (fixes iOS losing subscription)
@@ -2119,8 +2133,8 @@ async function reRegisterPushIfNeeded(){
         // Make sure it's saved in Supabase
         if(currentUser){
           const {data} = await sb.from('push_subscriptions')
-            .select('id').eq('user_id', currentUser.id).single();
-          if(!data){
+            .select('id').eq('user_id', currentUser.id).limit(1);
+          if(!data || !data.length){
             await subscribePush(reg);
             console.log('Push subscription re-saved to Supabase');
           }
