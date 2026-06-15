@@ -286,6 +286,9 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .comment-author{font-size:.65rem;font-weight:600;color:var(--gold);margin-bottom:.2rem;letter-spacing:.05em}
 .comment-text{font-size:.86rem;color:var(--text-md);line-height:1.5}
 .comment-date{font-size:.6rem;color:var(--text-xs);margin-top:.2rem}
+.comment-header-right{display:inline-flex;align-items:center;gap:.5rem}
+.comment-del{background:none;border:none;cursor:pointer;font-size:.78rem;line-height:1;padding:.1rem .2rem;border-radius:4px;opacity:.55;transition:opacity .2s,background .2s}
+.comment-del:hover{opacity:1;background:rgba(192,57,43,.12)}
 .comment-input-row{display:flex;gap:.5rem;margin-top:.7rem}
 .comment-input{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Jost',sans-serif;font-size:.78rem;padding:.5rem .7rem;border-radius:var(--r);outline:none;transition:border-color .2s}
 .comment-input:focus{border-color:var(--border-strong)}
@@ -1765,12 +1768,18 @@ async function loadComments(postId){
     const initial = (cm.author_name||'A')[0].toUpperCase();
     const date = new Date(cm.created_at);
     const dateStr = date.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+    const delBtn = isAdmin
+      ? `<button class="comment-del" title="Eliminar comentario" onclick="deleteComment('${cm.id}','${postId}')">🗑️</button>`
+      : '';
     return `<div class="comment-item">
       <div class="comment-avatar">${initial}</div>
       <div class="comment-bubble">
         <div class="comment-header">
           <span class="comment-author">${cm.author_name||'Alumno'}</span>
-          <span class="comment-date">${dateStr}</span>
+          <span class="comment-header-right">
+            <span class="comment-date">${dateStr}</span>
+            ${delBtn}
+          </span>
         </div>
         <div class="comment-text">${cm.body}</div>
       </div>
@@ -1779,6 +1788,16 @@ async function loadComments(postId){
   // Update toggle count
   const toggle = document.getElementById('toggle-'+postId);
   if(toggle) toggle.textContent = '💬 '+data.length+(data.length===1?' comentario':' comentarios');
+}
+
+// Admin only: delete a comment from the community
+async function deleteComment(commentId, postId){
+  if(!isAdmin){ showToast('Solo el admin puede eliminar comentarios','warn'); return; }
+  if(!confirm('¿Eliminar este comentario? Esta acción no se puede deshacer.')) return;
+  const {error} = await sb.from('comments').delete().eq('id', commentId);
+  if(error){ showToast('Error al eliminar: '+error.message,'error'); return; }
+  await loadComments(postId);
+  showToast('Comentario eliminado','');
 }
 
 async function submitComment(postId){
