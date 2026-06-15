@@ -228,6 +228,17 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .m-val{font-size:.92rem;color:var(--text);text-align:right}
 .m-val.g{color:var(--gold)}
 .m-val.am{color:var(--amber);font-size:.72rem}
+.m-terms{padding:0 1.8rem 0.4rem}
+.m-terms-box{background:rgba(200,168,75,.04);border:1px solid var(--border-md);border-left:3px solid var(--amber);padding:.85rem 1rem;border-radius:var(--r);margin-bottom:.9rem}
+.m-terms-title{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:.5rem}
+.m-terms-box p{font-size:.74rem;color:var(--text-md);line-height:1.6;margin-bottom:.45rem}
+.m-terms-box p:last-child{margin-bottom:0}
+.m-terms-box strong{color:var(--gold)}
+.m-terms-check{display:flex;align-items:flex-start;gap:.6rem;cursor:pointer;padding:.3rem 0}
+.m-terms-check input[type=checkbox]{accent-color:var(--gold);width:16px;height:16px;margin-top:1px;flex-shrink:0;cursor:pointer}
+.m-terms-check span{font-size:.76rem;color:var(--text-md);line-height:1.5}
+.btn-m-confirm:disabled{background:var(--lift);color:var(--text-xs);cursor:not-allowed;opacity:.55}
+.btn-m-confirm:disabled:hover{background:var(--lift)}
 .m-foot{padding:1.1rem 1.8rem 1.6rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:.65rem}
 .m-acts{display:flex;gap:.7rem}
 .btn-m-cancel{flex:1;background:none;border:1px solid var(--border);color:var(--text-sm);font-family:'Jost',sans-serif;font-size:.67rem;letter-spacing:.12em;text-transform:uppercase;padding:.65rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
@@ -761,10 +772,21 @@ footer{border-top:1px solid var(--border);padding:1.8rem 3rem;display:flex;align
       <button class="m-close" onclick="closeModal()">✕</button>
     </div>
     <div class="m-body" id="modal-body"></div>
+    <div class="m-terms" id="m-terms">
+      <div class="m-terms-box">
+        <div class="m-terms-title">⚠️ Política de cancelación</div>
+        <p>Las clases pueden cancelarse con un <strong>mínimo de 24hs de anticipación</strong> sin costo.</p>
+        <p>Si cancelás con <strong>menos de 24hs</strong>, se cobrará el <strong>100% del valor de la clase</strong> según la modalidad reservada (Driving / Putter & Approach: $35.000 ARS · Cancha: $43.000 ARS), abonable vía Mercado Pago.</p>
+      </div>
+      <label class="m-terms-check">
+        <input type="checkbox" id="chk-terms" onchange="toggleConfirmBtn()">
+        <span>Leí y acepto las bases y condiciones, incluyendo la política de cancelación.</span>
+      </label>
+    </div>
     <div class="m-foot">
       <div class="m-acts">
         <button class="btn-m-cancel" id="btn-m-cancel" onclick="closeModal()">Cancelar</button>
-        <button class="btn-m-confirm" id="btn-m-confirm" onclick="doConfirm()">
+        <button class="btn-m-confirm" id="btn-m-confirm" onclick="doConfirm()" disabled>
           <span>Confirmar reserva</span>
         </button>
       </div>
@@ -866,6 +888,7 @@ let userProfile = null;
 let S = {mod:null,selDate:null,selSlot:null,calY:new Date().getFullYear(),calM:new Date().getMonth(),bkFilter:'all'};
 let lastBooking = null;
 let pendingCancelId = null;
+let postTitles = {};
 
 // ============================================================
 // ICON
@@ -996,6 +1019,24 @@ function subscribeAdminRealtime(){
         }
         showToast('❌ Cancelación: '+(bk.user_name||bk.user_email)+' · '+bk.modality_name,'warn');
       }
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'comments'},payload=>{
+      const c = payload.new;
+      // Don't notify the admin about their own comments
+      if(c.user_id === currentUser?.id) return;
+      const postTitle = postTitles[c.post_id] || 'una publicación';
+      const snippet = (c.body||'').length>60 ? c.body.slice(0,60)+'…' : (c.body||'');
+      if(Notification.permission==='granted'){
+        navigator.serviceWorker.ready.then(reg=>{
+          reg.showNotification('💬 Nuevo comentario — EP Golf Coach',{
+            body:(c.author_name||'Alguien')+' comentó en "'+postTitle+'": '+snippet,
+            icon:'/icon-192.png',badge:'/icon-192.png',vibrate:[200,100,200],
+            tag:'admin-comment-'+c.id,renotify:true
+          });
+        });
+      }
+      showToast('💬 '+(c.author_name||'Alguien')+' comentó en la comunidad','success');
+      updateNotifDot();
     })
     .subscribe();
 }
@@ -1222,16 +1263,34 @@ function openConfirmModal(){
     <div class="m-row"><div class="m-key">Cancelación</div><div class="m-val am">Mínimo 24hs de anticipación</div></div>
   `;
   document.getElementById('btn-ics').style.display='none';
+  // Show terms block and reset acceptance — mandatory before confirming
+  document.getElementById('m-terms').style.display='block';
+  const chk=document.getElementById('chk-terms');
+  if(chk) chk.checked=false;
   const b=document.getElementById('btn-m-confirm');
-  b.innerHTML='<span>Confirmar reserva</span>';b.classList.remove('done');b.disabled=false;
+  b.innerHTML='<span>Confirmar reserva</span>';b.classList.remove('done');b.disabled=true;
   document.getElementById('btn-m-cancel').textContent='Cancelar';
   document.getElementById('btn-m-cancel').onclick=closeModal;
   document.getElementById('modal-bg').classList.add('open');
 }
 
+function toggleConfirmBtn(){
+  const chk=document.getElementById('chk-terms');
+  const btn=document.getElementById('btn-m-confirm');
+  if(!chk||!btn)return;
+  // Don't re-enable once booking is confirmed
+  if(btn.classList.contains('done'))return;
+  btn.disabled=!chk.checked;
+}
+
 function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
 
 async function doConfirm(){
+  const chk=document.getElementById('chk-terms');
+  if(!chk||!chk.checked){
+    showToast('Tenés que aceptar las bases y condiciones para reservar','warn');
+    return;
+  }
   const btn=document.getElementById('btn-m-confirm');
   btn.innerHTML='<span class="spinner"></span>';btn.disabled=true;
   const bk={
@@ -1256,58 +1315,87 @@ async function doConfirm(){
   lastBooking=data;
   setStep(3);
   btn.innerHTML='✓ Reserva confirmada';btn.classList.add('done');
-  document.getElementById('btn-ics').style.display='flex';
-  document.getElementById('btn-m-cancel').textContent='Cerrar';
-  document.getElementById('btn-m-cancel').onclick=()=>{closeModal();resetFlow();};
+  document.getElementById('m-terms').style.display='none';
   // Send notifications
   await sendNotifications(data);
   // Trigger server-side push to admin
   await sendAdminPushViaServer(data);
   showToast('¡Clase reservada! Te llegará una notificación de confirmación.','success');
   updateNotifDot();loadSlots();
-  // Auto-download ICS for admin
+  // Generate .ics so the user/admin can add it to their calendar
+  downloadICS(data);
   if(isAdmin) autoDownloadAdminICS(data);
+  // Auto-return to home (Reservar) after a brief success moment
+  setTimeout(()=>{
+    closeModal();
+    resetFlow();
+    goHome();
+  }, 1400);
+}
+
+// Navigate back to the home page (Reservar) and sync nav highlight
+function goHome(){
+  const btn=document.querySelector('.tab-item[data-page="reservar"]')
+         || document.querySelector('.nav-btn');
+  goPage('reservar', btn);
 }
 
 // ============================================================
-// NOTIFICATIONS via Supabase Edge Function
+// NOTIFICATIONS via Supabase Edge Function / Vercel
 // ============================================================
-async function sendAdminPushViaServer(bk){
+// Generic helper: send a push notification to the admin's phone.
+// Tries the Supabase Edge Function first (works on Vercel Hobby),
+// then falls back to the Vercel /api/notify endpoint.
+async function pushToAdmin(title, body, tag){
   try{
-    // Get admin push subscription from DB
     const {data:subs} = await sb.from('push_subscriptions')
       .select('subscription').eq('email', ADMIN_EMAIL).limit(1);
-    if(!subs?.length) return;
-    // Call Vercel API to send push
+    if(!subs?.length){ console.log('No admin push subscription found'); return; }
+    const sub = subs[0].subscription;
+    const payload = JSON.stringify({ subscription: sub, title, body, tag });
+
+    // 1) Preferred: Supabase Edge Function "notify"
+    try{
+      const r = await fetch(SUPABASE_URL+'/functions/v1/notify', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY},
+        body: payload
+      });
+      if(r.ok) return;
+    }catch(e){ /* fall through to Vercel */ }
+
+    // 2) Fallback: Vercel serverless function
     await fetch('/api/notify', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        subscription: subs[0].subscription,
-        title: '🏌️ Nueva reserva — EP Golf Coach',
-        body: (bk.user_name||bk.user_email)+' · '+bk.modality_name+' · '+bk.date_display+' · '+bk.slot_label+' hs',
-        tag: 'new-booking-'+bk.id
-      })
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: payload
     });
-  }catch(e){console.log('Server push error:',e);}
+  }catch(e){ console.log('pushToAdmin error:', e); }
+}
+
+async function sendAdminPushViaServer(bk){
+  await pushToAdmin(
+    '🏌️ Nueva reserva — EP Golf Coach',
+    (bk.user_name||bk.user_email)+' · '+bk.modality_name+' · '+bk.date_display+' · '+bk.slot_label+' hs',
+    'new-booking-'+bk.id
+  );
 }
 
 async function sendCancelPushToAdmin(bk){
-  try{
-    const {data:subs} = await sb.from('push_subscriptions')
-      .select('subscription').eq('email', ADMIN_EMAIL).limit(1);
-    if(!subs?.length) return;
-    await fetch('/api/notify', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        subscription: subs[0].subscription,
-        title: '❌ Clase cancelada — EP Golf Coach',
-        body: (bk.user_name||bk.user_email)+' canceló '+bk.modality_name+' · '+bk.date_display,
-        tag: 'cancel-'+bk.id
-      })
-    });
-  }catch(e){}
+  await pushToAdmin(
+    '❌ Clase cancelada — EP Golf Coach',
+    (bk.user_name||bk.user_email)+' canceló '+bk.modality_name+' · '+bk.date_display,
+    'cancel-'+bk.id
+  );
+}
+
+async function sendCommentPushToAdmin(authorName, postTitle, body){
+  const snippet = body.length>60 ? body.slice(0,60)+'…' : body;
+  await pushToAdmin(
+    '💬 Nuevo comentario — EP Golf Coach',
+    authorName+' comentó en "'+postTitle+'": '+snippet,
+    'comment-'+Date.now()
+  );
 }
 
 async function sendNotifications(bk){
@@ -1592,6 +1680,8 @@ async function doCancel(){
 async function loadPosts(){
   const {data}=await sb.from('posts').select('*').order('created_at',{ascending:false});
   const feed=document.getElementById('feed');
+  // Keep a map of post id -> title for comment notifications
+  (data||[]).forEach(p=>{ postTitles[p.id]=p.title; });
   if(!data?.length){
     feed.innerHTML='<div class="es-icon" style="text-align:center;padding:2rem;opacity:.3">Sin publicaciones aún</div>';
     return;
@@ -1689,6 +1779,21 @@ async function submitComment(postId){
   input.value='';
   await loadComments(postId);
   showToast('Comentario enviado','success');
+  // Notify admin (skip if the admin is the one commenting)
+  if(currentUser.email !== ADMIN_EMAIL){
+    const postTitle = (postTitles[postId]||'una publicación');
+    try{
+      await sb.from('notifications').insert({
+        user_id: null,
+        type: 'new_comment',
+        title: '💬 Nuevo comentario',
+        body: authorName+' comentó en "'+postTitle+'": '+(body.length>80?body.slice(0,80)+'…':body),
+        for_admin: true,
+        read: false
+      });
+    }catch(e){}
+    await sendCommentPushToAdmin(authorName, postTitle, body);
+  }
 }
 
 async function publishPost(){
