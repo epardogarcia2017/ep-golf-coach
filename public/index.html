@@ -239,6 +239,16 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .m-terms-check span{font-size:.76rem;color:var(--text-md);line-height:1.5}
 .btn-m-confirm:disabled{background:var(--lift);color:var(--text-xs);cursor:not-allowed;opacity:.55}
 .btn-m-confirm:disabled:hover{background:var(--lift)}
+.notif-state-row{display:flex;align-items:center;gap:.6rem;font-size:.82rem;color:var(--text-md);margin-bottom:1rem;line-height:1.5}
+.notif-dot-ind{width:10px;height:10px;border-radius:50%;background:var(--text-xs);flex-shrink:0;transition:background .3s}
+.notif-dot-ind.on{background:#3fb950;box-shadow:0 0 8px rgba(63,185,80,.6)}
+.notif-dot-ind.off{background:var(--red)}
+.notif-dot-ind.pending{background:var(--amber)}
+.notif-btn-group{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.btn-notif-off{background:none;border:1px solid var(--border);color:var(--text-sm);font-family:'Jost',sans-serif;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;padding:.62rem 1.3rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
+.btn-notif-off:hover{border-color:rgba(192,57,43,.5);color:var(--red)}
+.btn-notif-test{margin-top:.9rem;width:100%;background:none;border:1px solid var(--border-md);color:var(--gold);font-family:'Jost',sans-serif;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;padding:.62rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
+.btn-notif-test:hover{background:rgba(200,168,75,.07);border-color:var(--border-strong)}
 .m-foot{padding:1.1rem 1.8rem 1.6rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:.65rem}
 .m-acts{display:flex;gap:.7rem}
 .btn-m-cancel{flex:1;background:none;border:1px solid var(--border);color:var(--text-sm);font-family:'Jost',sans-serif;font-size:.67rem;letter-spacing:.12em;text-transform:uppercase;padding:.65rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
@@ -735,10 +745,17 @@ footer{border-top:1px solid var(--border);padding:1.8rem 3rem;display:flex;align
       </div>
       <div id="pv-notif" style="display:none">
         <div class="prf-sec-h">Notificaciones</div>
-        <div class="prf-sec-sub">Activá las notificaciones para recibir confirmaciones y recordatorios de tus clases.</div>
+        <div class="prf-sec-sub">Activá las notificaciones para recibir avisos de reservas y comentarios en este dispositivo.</div>
         <div id="notif-status-card" style="background:var(--panel);border:1px solid var(--border);border-radius:var(--rm);padding:1.2rem 1.5rem;margin-bottom:1.5rem">
-          <div style="font-size:.8rem;color:var(--text-md);margin-bottom:.8rem" id="notif-status-text">Cargando estado...</div>
-          <button class="btn-submit" id="btn-notif-action" onclick="handleNotifAction()">Activar notificaciones</button>
+          <div class="notif-state-row" id="notif-state-row">
+            <span class="notif-dot-ind" id="notif-dot-ind"></span>
+            <span id="notif-status-text">Cargando estado...</span>
+          </div>
+          <div class="notif-btn-group">
+            <button class="btn-submit" id="btn-notif-action" onclick="handleNotifAction()">Activar notificaciones</button>
+            <button class="btn-notif-off" id="btn-notif-off" onclick="deactivateNotifications()" style="display:none">Desactivar</button>
+          </div>
+          <button class="btn-notif-test" id="btn-notif-test" onclick="testAdminPush()" style="display:none">🔔 Probar notificación ahora</button>
         </div>
       </div>
       <div id="pv-admin" style="display:none">
@@ -1978,23 +1995,95 @@ async function subscribePush(reg){
   }
 }
 
-function updateNotifStatusUI(){
+async function updateNotifStatusUI(){
   const el=document.getElementById('notif-status-text');
   const btn=document.getElementById('btn-notif-action');
+  const dot=document.getElementById('notif-dot-ind');
+  const offBtn=document.getElementById('btn-notif-off');
+  const testBtn=document.getElementById('btn-notif-test');
   if(!el||!btn)return;
   const perm=Notification.permission;
+
+  // Helper to set the colored status dot
+  const setDot=(cls)=>{ if(dot){ dot.className='notif-dot-ind '+cls; } };
+
+  if(perm==='denied'){
+    localStorage.removeItem('notif-granted');
+    el.textContent='❌ Notificaciones bloqueadas. En tu iPhone: Configuración → Notificaciones → EP Golf Coach → Permitir.';
+    setDot('off');
+    btn.style.display='none';
+    if(offBtn) offBtn.style.display='none';
+    if(testBtn) testBtn.style.display='none';
+    return;
+  }
+
   if(perm==='granted'){
     localStorage.setItem('notif-granted','1');
-    el.textContent='✅ Notificaciones activadas. Recibirás confirmaciones y recordatorios 24hs antes de cada clase.';
-    btn.textContent='✅ Notificaciones activas';btn.disabled=true;btn.style.opacity='.6';
-  } else if(perm==='denied'){
-    localStorage.removeItem('notif-granted');
-    el.textContent='❌ Notificaciones bloqueadas. En tu celular: Configuración → Safari/Chrome → Notificaciones → Permitir para este sitio.';
-    btn.style.display='none';
-  } else {
-    el.textContent='🔔 Activá las notificaciones para recibir confirmaciones y recordatorios 24hs antes de cada clase.';
-    btn.textContent='Activar notificaciones';btn.disabled=false;btn.style.opacity='1';
+    // Check whether the subscription is actually saved in Supabase
+    let saved=false;
+    if(currentUser){
+      try{
+        const {data}=await sb.from('push_subscriptions')
+          .select('id').eq('user_id', currentUser.id).limit(1);
+        saved=!!(data&&data.length);
+      }catch(e){}
+    }
+    if(saved){
+      el.textContent='✅ Notificaciones activadas en este dispositivo. Vas a recibir avisos de reservas y comentarios.';
+      setDot('on');
+      btn.textContent='✅ Activadas';btn.disabled=true;btn.style.opacity='.6';btn.style.display='none';
+      if(offBtn) offBtn.style.display='inline-flex';
+      if(testBtn) testBtn.style.display='block';
+    }else{
+      el.textContent='⚠️ Diste permiso pero falta guardar la suscripción. Tocá "Activar" de nuevo.';
+      setDot('pending');
+      btn.textContent='Activar notificaciones';btn.disabled=false;btn.style.opacity='1';btn.style.display='inline-flex';
+      if(offBtn) offBtn.style.display='none';
+      if(testBtn) testBtn.style.display='none';
+    }
+    return;
   }
+
+  // Default (not asked yet)
+  el.textContent='🔔 Activá las notificaciones para recibir avisos de reservas y comentarios.';
+  setDot('off');
+  btn.textContent='Activar notificaciones';btn.disabled=false;btn.style.opacity='1';btn.style.display='inline-flex';
+  if(offBtn) offBtn.style.display='none';
+  if(testBtn) testBtn.style.display='none';
+}
+
+// Turn off notifications: remove this device's subscription from Supabase
+async function deactivateNotifications(){
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    if(sub){ await sub.unsubscribe(); }
+    if(currentUser){
+      await sb.from('push_subscriptions').delete().eq('user_id', currentUser.id);
+    }
+    localStorage.removeItem('notif-granted');
+    localStorage.removeItem('push-sub');
+    showToast('Notificaciones desactivadas en este dispositivo','');
+    updateNotifStatusUI();
+  }catch(e){
+    console.error('deactivate error:', e);
+    showToast('No se pudieron desactivar: '+(e?.message||e),'error');
+  }
+}
+
+// Send a test push to the admin's own phone via the Edge Function
+async function testAdminPush(){
+  if(currentUser?.email !== ADMIN_EMAIL){
+    showToast('La prueba de push es solo para el admin','warn');
+    return;
+  }
+  showToast('Enviando notificación de prueba...','');
+  await pushToAdmin(
+    '🔔 Prueba — EP Golf Coach',
+    'Si ves esto, las notificaciones funcionan correctamente ✅',
+    'test-'+Date.now()
+  );
+  setTimeout(()=>showToast('Si no llegó en unos segundos, avisá','warn'), 4000);
 }
 
 // Re-register SW subscription if previously granted (fixes iOS losing subscription)
