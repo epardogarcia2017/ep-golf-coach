@@ -1903,23 +1903,49 @@ async function requestNotifPermission(){
     localStorage.setItem('notif-granted','1');
     try{
       const reg = await navigator.serviceWorker.ready;
-      // Subscribe to push
-      await subscribePush(reg);
+      // Subscribe to push (this now works thanks to urlBase64ToUint8Array)
+      const sub = await subscribePush(reg);
+      if(!sub) throw new Error('No se pudo crear la suscripción push');
+      // Verify it actually landed in Supabase
+      let saved = false;
+      if(currentUser){
+        const {data} = await sb.from('push_subscriptions')
+          .select('id').eq('user_id', currentUser.id).limit(1);
+        saved = !!(data && data.length);
+      }
       // Confirm notification
       await reg.showNotification('✅ EP Golf Coach',{
-        body:'Notificaciones activadas. Recibirás confirmaciones y recordatorios.',
+        body:'Notificaciones activadas. Recibirás avisos de reservas y comentarios.',
         icon:'/icon-192.png',
         tag:'welcome'
       });
-      showToast('Notificaciones activadas ✓','success');
+      if(saved){
+        showToast('Notificaciones activadas ✓','success');
+      }else{
+        showToast('Permiso OK, pero no se guardó la suscripción. Reintentá.','warn');
+      }
     }catch(e){
       console.error('Push registration error:',e);
-      showToast('Notificaciones activadas (sin push remoto)','');
+      showToast('Error al activar el push: '+(e?.message||e),'error');
     }
   } else {
     localStorage.removeItem('notif-granted');
     showToast('Permiso denegado — activá las notificaciones desde Configuración','warn');
   }
+}
+
+// Convert a base64 URL-safe VAPID key into the Uint8Array the browser needs.
+// Without this, pushManager.subscribe() fails on iOS/Safari and the
+// subscription is never saved — which is exactly why no push arrives.
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for(let i=0; i<rawData.length; i++){
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
 }
 
 async function subscribePush(reg){
