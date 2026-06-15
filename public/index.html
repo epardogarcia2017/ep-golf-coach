@@ -1792,18 +1792,58 @@ function dismissNotifPrompt(){
 }
 
 async function requestNotifPermission(){
-  const perm=await Notification.requestPermission();
+  const perm = await Notification.requestPermission();
   updateNotifStatusUI();
-  if(perm==='granted'){
-    showToast('Notificaciones activadas ✓','success');
-    navigator.serviceWorker.ready.then(reg=>{
-      reg.showNotification('✅ EP Golf Coach',{
-        body:'Las notificaciones están activadas. Te avisaremos de tus clases.',
-        icon:'/icon-192.png'
+  if(perm === 'granted'){
+    localStorage.setItem('notif-granted','1');
+    try{
+      const reg = await navigator.serviceWorker.ready;
+      // Subscribe to push
+      await subscribePush(reg);
+      // Confirm notification
+      await reg.showNotification('✅ EP Golf Coach',{
+        body:'Notificaciones activadas. Recibirás confirmaciones y recordatorios.',
+        icon:'/icon-192.png',
+        tag:'welcome'
       });
-    });
+      showToast('Notificaciones activadas ✓','success');
+    }catch(e){
+      console.error('Push registration error:',e);
+      showToast('Notificaciones activadas (sin push remoto)','');
+    }
   } else {
-    showToast('Notificaciones denegadas — activalas desde la configuración del browser','warn');
+    localStorage.removeItem('notif-granted');
+    showToast('Permiso denegado — activá las notificaciones desde Configuración','warn');
+  }
+}
+
+async function subscribePush(reg){
+  try{
+    // Check if already subscribed
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub){
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    // Save to localStorage
+    localStorage.setItem('push-sub', JSON.stringify(sub));
+    // Save to Supabase
+    if(currentUser){
+      const {error} = await sb.from('push_subscriptions').upsert({
+        user_id: currentUser.id,
+        email: currentUser.email,
+        subscription: sub,
+        updated_at: new Date().toISOString()
+      }, {onConflict: 'user_id'});
+      if(error) console.error('Supabase push save error:', error);
+      else console.log('✅ Push subscription saved to Supabase');
+    }
+    return sub;
+  }catch(e){
+    console.error('subscribePush error:', e);
+    throw e;
   }
 }
 
@@ -1832,9 +1872,22 @@ async function reRegisterPushIfNeeded(){
     try{
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
-      // Sub exists or not - no notification on open
-      console.log('Push subscription status:', sub ? 'active' : 'inactive');
-    }catch(e){}
+      if(!sub){
+        // Re-subscribe silently if lost
+        await subscribePush(reg);
+        console.log('Push re-subscribed');
+      } else {
+        // Make sure it's saved in Supabase
+        if(currentUser){
+          const {data} = await sb.from('push_subscriptions')
+            .select('id').eq('user_id', currentUser.id).single();
+          if(!data){
+            await subscribePush(reg);
+            console.log('Push subscription re-saved to Supabase');
+          }
+        }
+      }
+    }catch(e){ console.log('reRegister error:', e); }
   }
 }
 
