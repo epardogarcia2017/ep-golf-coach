@@ -397,6 +397,44 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .admin-stat{background:var(--panel);border:1px solid var(--border);border-radius:var(--rm);padding:.9rem 1.1rem}
 .admin-stat-lbl{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-sm);margin-bottom:.3rem}
 .admin-stat-val{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:400;color:var(--gold)}
+/* ===== PANEL ADMIN AMPLIADO — Analíticas (solo admin) ===== */
+#admin-analytics{margin-bottom:1.5rem}
+.an-block{margin-bottom:2.1rem}
+.an-head{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text-sm);margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem}
+.an-head .line{flex:1;height:1px;background:var(--border);display:block}
+.an-seg{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--rm);padding:3px;gap:3px;margin-bottom:1.1rem;flex-wrap:wrap}
+.an-seg button{background:none;border:none;color:var(--text-sm);font-family:'Jost',sans-serif;font-size:.64rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;padding:.42rem .85rem;border-radius:var(--r);cursor:pointer;transition:all .2s}
+.an-seg button.on{background:var(--gold);color:var(--black)}
+.an-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:.7rem}
+.an-kpi{background:var(--panel);border:1px solid var(--border);border-radius:var(--rm);padding:.9rem 1rem}
+.an-kpi .k{font-size:.55rem;letter-spacing:.13em;text-transform:uppercase;color:var(--text-sm);margin-bottom:.35rem}
+.an-kpi .v{font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:400;color:var(--gold);line-height:1}
+.an-kpi .s{font-size:.6rem;color:var(--text-sm);margin-top:.3rem}
+.an-chart{background:var(--panel);border:1px solid var(--border);border-radius:var(--rm);padding:1.1rem 1.2rem}
+.an-bars{display:flex;align-items:flex-end;gap:.45rem;height:150px}
+.an-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:.35rem;min-width:0;height:100%;justify-content:flex-end}
+.an-bar-val{font-size:.54rem;color:var(--gold);white-space:nowrap}
+.an-bar-track{width:100%;display:flex;align-items:flex-end;justify-content:center;flex:1}
+.an-bar{width:62%;max-width:32px;background:linear-gradient(180deg,var(--gold-lt),var(--gold-dk));border-radius:3px 3px 0 0;min-height:2px;transition:height .45s var(--ease)}
+.an-bar-lbl{font-size:.53rem;color:var(--text-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
+.an-hbar-row{display:grid;grid-template-columns:118px 1fr auto;align-items:center;gap:.7rem;margin-bottom:.75rem}
+.an-hbar-row:last-child{margin-bottom:0}
+.an-hbar-lbl{font-size:.72rem;color:var(--text-md);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.an-hbar-track{background:var(--surface);border-radius:99px;height:9px;overflow:hidden}
+.an-hbar-fill{height:100%;background:linear-gradient(90deg,var(--gold-dk),var(--gold));border-radius:99px;transition:width .45s var(--ease)}
+.an-hbar-num{font-size:.68rem;color:var(--gold);white-space:nowrap;font-variant-numeric:tabular-nums}
+.an-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--rm)}
+.an-table{width:100%;border-collapse:collapse;min-width:540px}
+.an-table th{font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-sm);text-align:left;padding:.7rem .9rem;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;background:var(--panel)}
+.an-table th:hover{color:var(--gold)}
+.an-table th.num,.an-table td.num{text-align:right}
+.an-table td{font-size:.78rem;color:var(--text-md);padding:.6rem .9rem;border-bottom:1px solid var(--border);vertical-align:top}
+.an-table tbody tr:last-child td{border-bottom:none}
+.an-table tbody tr:hover td{background:rgba(200,168,75,.03)}
+.an-table td.name{color:var(--text);font-weight:500}
+.an-table td.num{font-variant-numeric:tabular-nums;color:var(--gold)}
+.an-mods-mini{font-size:.62rem;color:var(--text-sm);margin-top:.15rem;font-weight:400}
+.an-empty{color:var(--text-sm);font-size:.8rem;padding:1.3rem;text-align:center;background:var(--panel);border:1px dashed var(--border);border-radius:var(--rm)}
 .notif-banner{background:rgba(200,168,75,.04);border:1px solid var(--border-md);border-left:3px solid var(--gold);padding:.85rem 1.1rem;border-radius:var(--r);margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap}
 .notif-banner-info{display:flex;align-items:center;gap:.6rem;font-size:.77rem;color:var(--text-md)}
 .btn-notif-allow{background:var(--gold);color:var(--black);border:none;font-family:'Jost',sans-serif;font-size:.66rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.38rem .85rem;cursor:pointer;border-radius:var(--r);transition:all .2s;white-space:nowrap}
@@ -760,6 +798,7 @@ footer{border-top:1px solid var(--border);padding:1.8rem 3rem;display:flex;align
         <div class="prf-sec-h">Panel de administración</div>
         <div class="prf-sec-sub">Resumen completo de EP Golf Coach.</div>
         <div class="admin-stat-grid" id="admin-stats-grid"></div>
+        <div id="admin-analytics"></div>
         <div style="font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text-sm);margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem">Todas las reservas<span style="flex:1;height:1px;background:var(--border);display:block"></span></div>
         <div id="admin-bk-list"></div>
       </div>
@@ -1871,6 +1910,8 @@ async function loadAdminPanel(){
     {l:'Total reservas',v:total||0},{l:'Próximas clases',v:upcoming||0},
     {l:'Alumnos únicos',v:uniq},{l:'Publicaciones',v:posts||0}
   ].map(s=>`<div class="admin-stat"><div class="admin-stat-lbl">${s.l}</div><div class="admin-stat-val">${s.v}</div></div>`).join('');
+  // Panel ampliado: analíticas detalladas (solo admin)
+  renderAdminAnalytics();
   // Load all bookings
   const {data:list}=await sb.from('bookings').select('*').eq('status','confirmed').order('date_iso',{ascending:false}).limit(20);
   const bl=document.getElementById('admin-bk-list');if(!bl)return;
@@ -1884,6 +1925,200 @@ async function loadAdminPanel(){
       <div class="badge b-conf">Confirmada</div>
     </div>`;
   }).join('')+'</div>';
+}
+
+// ============================================================
+// PANEL ADMIN AMPLIADO — Analíticas y métricas (SOLO admin)
+// Lee todas las reservas confirmadas y calcula todo en el cliente.
+// No modifica ningún otro sistema; sólo renderiza dentro de
+// #admin-analytics, que vive dentro de la pestaña admin (oculta
+// para los alumnos). Además, RLS impide que un alumno lea las
+// reservas de otros, así que los datos están protegidos.
+// ============================================================
+let _anBookings=null;      // cache de reservas confirmadas
+let _anCancelled=0;        // cantidad de canceladas (para tasa)
+let _anPeriod='month';     // week | month | all  (KPIs de cabecera)
+let _anWeekMetric='fac';   // fac | hor | alu     (gráfico semanal)
+let _anMonthMetric='fac';  // fac | hor | alu     (gráfico mensual)
+let _anSort={key:'clases',dir:-1}; // orden tabla alumnos
+
+function anPrice(k){ return (typeof MP_PRICES!=='undefined' && MP_PRICES[k]) ? MP_PRICES[k] : 35000; }
+function anMoney(n){ return '$'+Math.round(n||0).toLocaleString('es-AR'); }
+function anMoneyShort(n){ n=Math.round(n||0); if(n>=1000000) return '$'+(n/1000000).toFixed(1).replace('.0','')+'M'; if(n>=1000) return '$'+Math.round(n/1000)+'k'; return '$'+n; }
+function anEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function anDkToDate(dk){ const a=String(dk||'').split('-').map(Number); return (a[0]&&a[1]&&a[2])?new Date(a[0],a[1]-1,a[2]):null; }
+function anMonday(dt){ const d=new Date(dt); const wd=(d.getDay()+6)%7; d.setDate(d.getDate()-wd); d.setHours(0,0,0,0); return fmtKey(d); }
+function anMonthKey(dt){ return dt.getFullYear()+'-'+p2(dt.getMonth()+1); }
+
+async function renderAdminAnalytics(){
+  if(!isAdmin) return;
+  const host=document.getElementById('admin-analytics');
+  if(!host) return;
+  host.innerHTML='<div class="an-empty">Cargando estadísticas…</div>';
+  const {data:list}=await sb.from('bookings')
+    .select('user_id,user_name,user_email,modality,modality_name,date_key,date_iso,slot,slot_label,nivel,created_at')
+    .eq('status','confirmed');
+  const {count:canc}=await sb.from('bookings').select('*',{count:'exact',head:true}).eq('status','cancelled');
+  _anBookings=(list||[]).map(b=>{
+    const d=anDkToDate(b.date_key)||new Date(b.date_iso);
+    return {...b, _d:d, _price:anPrice(b.modality)};
+  });
+  _anCancelled=canc||0;
+  drawAnalytics();
+}
+
+// helpers de UI (cambian estado y re-renderizan desde el cache)
+function setAnPeriod(p){ _anPeriod=p; drawAnalytics(); }
+function setWeekMetric(m){ _anWeekMetric=m; drawAnalytics(); }
+function setMonthMetric(m){ _anMonthMetric=m; drawAnalytics(); }
+function anSort(key){ if(_anSort.key===key){ _anSort.dir*=-1; } else { _anSort={key, dir:(key==='name'?1:-1)}; } drawAnalytics(); }
+
+function anBars(data, metric){
+  const valOf=(d)=> metric==='fac'?d.fac : metric==='hor'?d.n : d.al;
+  const max=Math.max(1,...data.map(valOf));
+  const fmt=(v)=> metric==='fac'? anMoneyShort(v) : String(v);
+  return '<div class="an-bars">'+data.map(d=>{
+    const v=valOf(d); const h=v?Math.max(Math.round((v/max)*100),3):0;
+    return `<div class="an-bar-col"><div class="an-bar-val">${v?fmt(v):''}</div><div class="an-bar-track"><div class="an-bar" style="height:${h}%"></div></div><div class="an-bar-lbl">${d.lbl}</div></div>`;
+  }).join('')+'</div>';
+}
+
+function anMetricSeg(metric, fn){
+  const b=(m,l)=>`<button class="${metric===m?'on':''}" onclick="${fn}('${m}')">${l}</button>`;
+  return `<div class="an-seg" style="margin-bottom:1rem">${b('fac','Valores')}${b('hor','Horas')}${b('alu','Alumnos')}</div>`;
+}
+
+function drawAnalytics(){
+  const host=document.getElementById('admin-analytics');
+  if(!host) return;
+  const all=_anBookings||[];
+  if(!all.length){
+    host.innerHTML='<div class="an-empty">Todavía no hay reservas confirmadas para generar estadísticas. Cuando tus alumnos reserven, vas a ver acá el detalle completo.</div>';
+    return;
+  }
+  const now=new Date(); now.setHours(0,0,0,0);
+  const weekStart=anMonday(now);
+  const monthK=anMonthKey(now);
+  const sum=(arr)=>arr.reduce((a,b)=>a+b._price,0);
+  const uniq=(arr)=>new Set(arr.map(b=>b.user_id||b.user_email)).size;
+
+  // ---------- KPIs del período seleccionado ----------
+  let inPeriod;
+  if(_anPeriod==='week') inPeriod=b=> anMonday(b._d)===weekStart;
+  else if(_anPeriod==='month') inPeriod=b=> anMonthKey(b._d)===monthK;
+  else inPeriod=()=>true;
+  const sel=all.filter(inPeriod);
+  const kRes=sel.length, kHor=sel.length, kFac=sum(sel), kAl=uniq(sel);
+  const kTicket= kRes? kFac/kRes : 0;
+  const pLbl=_anPeriod==='week'?'esta semana':_anPeriod==='month'?'este mes':'histórico';
+  const segP=(p,l)=>`<button class="${_anPeriod===p?'on':''}" onclick="setAnPeriod('${p}')">${l}</button>`;
+
+  // ---------- Por modalidad (histórico) ----------
+  const modKeys=['driving','putter','cancha'];
+  const modAgg=modKeys.map(k=>{ const a=all.filter(b=>b.modality===k); return {k, name:(typeof MODS!=='undefined'&&MODS[k]?MODS[k].name:k), n:a.length, fac:sum(a)}; });
+  const maxModN=Math.max(1,...modAgg.map(m=>m.n));
+
+  // ---------- Semanal (últimas 8 semanas) ----------
+  const weeks=[]; for(let i=7;i>=0;i--){ const d=new Date(now); d.setDate(d.getDate()-i*7); weeks.push(anMonday(d)); }
+  const weekData=weeks.map(wk=>{ const a=all.filter(b=>anMonday(b._d)===wk); const p=wk.split('-'); return {lbl:p[2]+'/'+p[1], n:a.length, fac:sum(a), al:uniq(a)}; });
+
+  // ---------- Mensual (últimos 6 meses) ----------
+  const monthData=[]; for(let i=5;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); const mk=anMonthKey(d); const a=all.filter(b=>anMonthKey(b._d)===mk); monthData.push({lbl:MESS[d.getMonth()]+' '+String(d.getFullYear()).slice(2), n:a.length, fac:sum(a), al:uniq(a)}); }
+
+  // ---------- Alumnos ----------
+  const byUser={};
+  all.forEach(b=>{ const id=b.user_id||b.user_email; if(!byUser[id]) byUser[id]={name:b.user_name||b.user_email||'Alumno', email:b.user_email||'', clases:0, horas:0, fac:0, mods:new Set()}; const u=byUser[id]; u.clases++; u.horas++; u.fac+=b._price; if(b.modality) u.mods.add(b.modality); });
+  let users=Object.values(byUser).map(u=>({...u, mods:[...u.mods]}));
+  const sk=_anSort.key, dir=_anSort.dir;
+  users.sort((a,b)=>{ if(sk==='name'){ const va=a.name.toLowerCase(), vb=b.name.toLowerCase(); return va<vb?-dir:va>vb?dir:0; } return ((a[sk]||0)-(b[sk]||0))*dir; });
+
+  // ---------- Métricas extra ----------
+  const DIAF=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const dayCount=[0,0,0,0,0,0,0]; all.forEach(b=>dayCount[b._d.getDay()]++);
+  const topDayIdx=dayCount.indexOf(Math.max(...dayCount));
+  const slotCount={}; all.forEach(b=>{ slotCount[b.slot]=(slotCount[b.slot]||0)+1; });
+  const topSlot=Object.keys(slotCount).sort((a,b)=>slotCount[b]-slotCount[a])[0];
+  const topMod=[...modAgg].sort((a,b)=>b.n-a.n)[0];
+  const firstByUser={}; all.forEach(b=>{ const id=b.user_id||b.user_email; const t=b._d.getTime(); if(!(id in firstByUser)||t<firstByUser[id]) firstByUser[id]=t; });
+  const nuevos=Object.keys(firstByUser).filter(id=>anMonthKey(new Date(firstByUser[id]))===monthK).length;
+  const totFac=sum(all);
+  const cancRate=(all.length+_anCancelled)? (_anCancelled/(all.length+_anCancelled)*100):0;
+  const promClases=users.length? (all.length/users.length):0;
+  const futuras=all.filter(b=>b._d>=now).length;
+
+  // ---------- Render ----------
+  let html='';
+
+  // KPIs cabecera
+  html+=`<div class="an-block">
+    <div class="an-seg">${segP('week','Semana')}${segP('month','Mes')}${segP('all','Histórico')}</div>
+    <div class="an-kpis">
+      <div class="an-kpi"><div class="k">Facturación</div><div class="v">${anMoney(kFac)}</div><div class="s">${pLbl}</div></div>
+      <div class="an-kpi"><div class="k">Clases · horas</div><div class="v">${kHor}</div><div class="s">${pLbl}</div></div>
+      <div class="an-kpi"><div class="k">Alumnos</div><div class="v">${kAl}</div><div class="s">reservaron</div></div>
+      <div class="an-kpi"><div class="k">Reservas</div><div class="v">${kRes}</div><div class="s">${pLbl}</div></div>
+      <div class="an-kpi"><div class="k">Ticket promedio</div><div class="v" style="font-size:1.35rem">${anMoney(kTicket)}</div><div class="s">por clase</div></div>
+    </div>
+  </div>`;
+
+  // Modalidad
+  html+=`<div class="an-block">
+    <div class="an-head">Horas y facturación por modalidad<span class="line"></span></div>
+    <div class="an-chart">
+      ${modAgg.map(m=>{ const pct=m.n?Math.max(Math.round((m.n/maxModN)*100),4):0; return `<div class="an-hbar-row"><div class="an-hbar-lbl" title="${anEsc(m.name)}">${anEsc(m.name)}</div><div class="an-hbar-track"><div class="an-hbar-fill" style="width:${pct}%"></div></div><div class="an-hbar-num">${m.n} hs · ${anMoney(m.fac)}</div></div>`; }).join('')}
+    </div>
+  </div>`;
+
+  // Semanal
+  html+=`<div class="an-block">
+    <div class="an-head">Resumen semanal · últimas 8 semanas<span class="line"></span></div>
+    <div class="an-chart">${anMetricSeg(_anWeekMetric,'setWeekMetric')}${anBars(weekData,_anWeekMetric)}</div>
+  </div>`;
+
+  // Mensual
+  html+=`<div class="an-block">
+    <div class="an-head">Resumen mensual · últimos 6 meses<span class="line"></span></div>
+    <div class="an-chart">${anMetricSeg(_anMonthMetric,'setMonthMetric')}${anBars(monthData,_anMonthMetric)}</div>
+  </div>`;
+
+  // Listado de alumnos
+  const arrow=(key)=> _anSort.key===key ? (_anSort.dir>0?' ▲':' ▼') : '';
+  html+=`<div class="an-block">
+    <div class="an-head">Listado de alumnos · ${users.length}<span class="line"></span></div>
+    <div class="an-table-wrap"><table class="an-table">
+      <thead><tr>
+        <th onclick="anSort('name')">Alumno${arrow('name')}</th>
+        <th class="num" onclick="anSort('clases')">Clases${arrow('clases')}</th>
+        <th class="num" onclick="anSort('horas')">Horas${arrow('horas')}</th>
+        <th>Modalidades</th>
+        <th class="num" onclick="anSort('fac')">Facturación${arrow('fac')}</th>
+      </tr></thead>
+      <tbody>${users.map(u=>`<tr>
+        <td class="name">${anEsc(u.name)}<div class="an-mods-mini">${anEsc(u.email)}</div></td>
+        <td class="num">${u.clases}</td>
+        <td class="num">${u.horas}</td>
+        <td><div class="an-mods-mini">${u.mods.map(k=>anEsc(MODS[k]?MODS[k].name:k)).join(', ')||'—'}</div></td>
+        <td class="num">${anMoney(u.fac)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+  </div>`;
+
+  // Otras métricas
+  html+=`<div class="an-block">
+    <div class="an-head">Otras métricas<span class="line"></span></div>
+    <div class="an-kpis">
+      <div class="an-kpi"><div class="k">Facturación total</div><div class="v" style="font-size:1.35rem">${anMoney(totFac)}</div><div class="s">histórica</div></div>
+      <div class="an-kpi"><div class="k">Modalidad top</div><div class="v" style="font-size:1.05rem">${topMod?anEsc(topMod.name):'—'}</div><div class="s">${topMod?topMod.n+' clases':''}</div></div>
+      <div class="an-kpi"><div class="k">Día más activo</div><div class="v" style="font-size:1.2rem">${DIAF[topDayIdx]}</div><div class="s">${dayCount[topDayIdx]} clases</div></div>
+      <div class="an-kpi"><div class="k">Horario pico</div><div class="v">${topSlot!=null?p2(topSlot)+':00':'—'}</div><div class="s">${topSlot!=null?slotCount[topSlot]+' clases':''}</div></div>
+      <div class="an-kpi"><div class="k">Alumnos nuevos</div><div class="v">${nuevos}</div><div class="s">este mes</div></div>
+      <div class="an-kpi"><div class="k">Prom. clases/alumno</div><div class="v">${promClases.toFixed(1)}</div><div class="s">histórico</div></div>
+      <div class="an-kpi"><div class="k">Próximas clases</div><div class="v">${futuras}</div><div class="s">a futuro</div></div>
+      <div class="an-kpi"><div class="k">Canceladas</div><div class="v">${_anCancelled}</div><div class="s">${cancRate.toFixed(0)}% del total</div></div>
+    </div>
+  </div>`;
+
+  host.innerHTML=html;
 }
 
 // ============================================================
