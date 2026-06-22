@@ -174,6 +174,8 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .slot:hover{border-color:var(--border-strong);color:var(--text);background:var(--surface)}
 .slot.sel{background:var(--gold);color:var(--black);border-color:var(--gold);font-weight:600;box-shadow:0 0 12px rgba(200,168,75,.22)}
 .slot.taken{background:var(--panel);color:var(--text-xs);cursor:not-allowed;border-color:transparent;text-decoration:line-through;opacity:.5}
+.slot.escuela{background:var(--panel);color:var(--text-sm);cursor:not-allowed;border-color:var(--border);opacity:.85;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.1}
+.slot.escuela small{font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);opacity:.85}
 .slot.loading{opacity:.4;cursor:default;animation:blink 1s infinite}
 @keyframes blink{0%,100%{opacity:.4}50%{opacity:.7}}
 .slots-empty{font-size:.78rem;color:var(--text-xs);font-style:italic;padding:2rem 0;text-align:center}
@@ -1318,6 +1320,14 @@ async function loadSlots(){
   hours.forEach(h=>{
     const lbl=p2(h)+':00';
     const e=document.createElement('div');
+    // Sábados 14:00 y 15:00: reservados para la escuela de menores y adultos
+    if(dow===6 && (h===14 || h===15)){
+      e.className='slot escuela';
+      e.innerHTML=lbl+'<small>Escuela</small>';
+      e.title='Reservado: escuela de menores y adultos';
+      gr.appendChild(e);
+      return;
+    }
     e.textContent=lbl;
     if(takenSlots.includes(h)){e.className='slot taken';e.title='Ocupado';}
     else{e.className='slot'+(S.selSlot===h?' sel':'');e.onclick=()=>pickSlot(h,lbl,e);}
@@ -1410,8 +1420,14 @@ async function doConfirm(){
   await sendAdminPushViaServer(data);
   showToast('¡Clase reservada! Te llegará una notificación de confirmación.','success');
   updateNotifDot();loadSlots();
-  // Generate .ics so the user/admin can add it to their calendar
-  downloadICS(data);
+  // Al confirmar, saltar DIRECTO a agendar (igual que en iPhone):
+  // Android → abre Google Calendar con el evento ya cargado.
+  // iPhone/escritorio → descarga el .ics (abre el Calendario de Apple).
+  if(/Android/i.test(navigator.userAgent)){
+    window.open(gcalUrl(data),'_blank');
+  } else {
+    downloadICS(data);
+  }
   if(isAdmin) autoDownloadAdminICS(data);
   // Auto-return to home (Reservar) after a brief success moment
   setTimeout(()=>{
@@ -1613,6 +1629,34 @@ function autoDownloadAdminICS(bk){
   setTimeout(()=>downloadICS(bk, true), 1500);
 }
 
+// Link de Google Calendar — funciona en Android, compu y iPhone.
+// Abre Google Calendar con el evento ya cargado, listo para guardar.
+function gcalUrl(bk){
+  const b=bk||lastBooking; if(!b) return '';
+  let y,mo,d;
+  if(b.date_key||b.dateKey){ const a=String(b.date_key||b.dateKey).split('-'); y=a[0]; mo=a[1]; d=a[2]; }
+  else { const dt=new Date(b.date_iso||b.dateISO); y=dt.getFullYear(); mo=p2(dt.getMonth()+1); d=p2(dt.getDate()); }
+  const h=Number(b.slot)||0;
+  const start=`${y}${mo}${d}T${p2(h)}0000`;
+  const end=`${y}${mo}${d}T${p2(h+1)}0000`;
+  const title=isAdmin
+    ? `${b.user_name||b.userName||'Alumno'} · ${b.modality_name||b.modName}`
+    : `Clase de golf — ${b.modality_name||b.modName}`;
+  const details=(isAdmin?('Alumno: '+(b.user_name||'')+'\n'):'')+'Clase EP Golf Coach. Cancelar con mínimo 24hs de anticipación.';
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+    +'&text='+encodeURIComponent(title)
+    +'&dates='+start+'/'+end
+    +'&ctz=America/Argentina/Buenos_Aires'
+    +'&details='+encodeURIComponent(details)
+    +'&location='+encodeURIComponent('Buenos Aires, Argentina');
+}
+
+function addToGoogleCal(bk){
+  const url=gcalUrl(bk);
+  if(!url){ showToast('No se pudo generar el evento','error'); return; }
+  window.open(url,'_blank');
+}
+
 function resetFlow(){
   S.selDate=null;S.selSlot=null;
   document.getElementById('sec-strip').style.display='none';
@@ -1662,7 +1706,8 @@ async function loadAndRenderBookings(filter){
       </div>
       <div class="bk-right">
         <div class="badge ${past?'b-real':'b-conf'}">${past?'Realizada':'Confirmada'}</div>
-        <button class="btn-bk-ics" onclick='downloadICS(${JSON.stringify(b)})'>📅 .ics</button>
+        <button class="btn-bk-ics" onclick='downloadICS(${JSON.stringify(b)})'>📅 Apple</button>
+        <button class="btn-bk-ics" onclick='addToGoogleCal(${JSON.stringify(b)})'>📅 Google</button>
         ${!past?`<button class="btn-bk-canc" onclick="openCancelModal('${b.id}','${b.modality}','${b.date_display}','${b.slot_label}')">Cancelar</button>`:''}
       </div>
     </div>`;
