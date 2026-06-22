@@ -334,6 +334,23 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .post-meta{display:flex;align-items:center;gap:1rem;font-size:.68rem;color:var(--text-xs)}
 .like-btn{background:none;border:none;color:var(--text-xs);font-family:'Jost',sans-serif;font-size:.68rem;cursor:pointer;transition:color .2s;display:flex;align-items:center;gap:.28rem;padding:0}
 .like-btn:hover,.like-btn.liked{color:var(--gold)}
+/* ===== COMUNIDAD: adjuntar archivos (composer) y media en posts ===== */
+.comp-attach{display:flex;align-items:center;gap:.5rem;margin-top:.7rem;flex-wrap:wrap}
+.comp-attach-btn{display:inline-flex;align-items:center;gap:.4rem;background:var(--surface);border:1px solid var(--border);color:var(--text-md);font-family:'Jost',sans-serif;font-size:.66rem;font-weight:500;padding:.4rem .75rem;border-radius:var(--r);cursor:pointer;transition:all .2s}
+.comp-attach-btn:hover{border-color:var(--gold);color:var(--gold)}
+.comp-link-in{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Jost',sans-serif;font-size:.78rem;padding:.55rem .9rem;border-radius:var(--r);outline:none;margin-top:.6rem;box-sizing:border-box}
+.comp-link-in:focus{border-color:var(--border-strong)}
+.comp-preview{margin-top:.7rem;display:flex;align-items:center;gap:.7rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.6rem .8rem;font-size:.74rem;color:var(--text-md)}
+.comp-preview img{width:46px;height:46px;object-fit:cover;border-radius:4px;flex-shrink:0}
+.comp-preview .pv-x{margin-left:auto;background:none;border:none;color:var(--text-sm);cursor:pointer;font-size:1rem;padding:.2rem .4rem;flex-shrink:0}
+.comp-preview .pv-x:hover{color:#e57373}
+.comp-uploading{font-size:.72rem;color:var(--gold);margin-top:.5rem}
+.post-media-img{width:100%;max-height:440px;object-fit:cover;display:block;background:var(--surface);cursor:pointer}
+.post-media-vid{width:100%;max-height:480px;display:block;background:#000}
+.post-media-yt{position:relative;width:100%;padding-bottom:56.25%;background:#000}
+.post-media-yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.post-media-link{display:flex;align-items:center;gap:.5rem;padding:.8rem 1.1rem;background:var(--surface);border-top:1px solid var(--border);color:var(--gold);font-size:.8rem;text-decoration:none;word-break:break-all}
+.post-media-link:hover{background:rgba(200,168,75,.06)}
 .side-lbl{font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--text-sm);margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem}
 .side-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
 .side-sec{margin-bottom:2rem}
@@ -680,6 +697,15 @@ footer{border-top:1px solid var(--border);padding:1.8rem 3rem;display:flex;align
         </div>
         <input class="comp-title-in" id="comp-title" type="text" placeholder="Título de la publicación...">
         <textarea class="comp-body-in" id="comp-body" placeholder="Compartí un tip, análisis o novedad con tus alumnos..."></textarea>
+        <div class="comp-attach">
+          <button type="button" class="comp-attach-btn" onclick="document.getElementById('comp-file-img').click()">📷 Foto</button>
+          <button type="button" class="comp-attach-btn" onclick="document.getElementById('comp-file-vid').click()">🎬 Video</button>
+          <button type="button" class="comp-attach-btn" onclick="toggleLinkInput()">🔗 Link</button>
+        </div>
+        <input type="file" id="comp-file-img" accept="image/*" style="display:none" onchange="onComposerFile(this)">
+        <input type="file" id="comp-file-vid" accept="video/*" style="display:none" onchange="onComposerFile(this)">
+        <input type="text" class="comp-link-in" id="comp-link" placeholder="Pegá un link de YouTube, Instagram o cualquier web..." style="display:none" oninput="onComposerLink(this.value)">
+        <div class="comp-preview" id="comp-preview" style="display:none"></div>
         <div class="comp-bar">
           <select class="type-sel" id="comp-type">
             <option value="tip">Tip técnico</option><option value="video">Análisis de swing</option>
@@ -830,7 +856,7 @@ footer{border-top:1px solid var(--border);padding:1.8rem 3rem;display:flex;align
       <div class="m-terms-box">
         <div class="m-terms-title">⚠️ Política de cancelación</div>
         <p>Las clases pueden cancelarse con un <strong>mínimo de 24hs de anticipación</strong> sin costo.</p>
-        <p>Si cancelás con <strong>menos de 24hs</strong>, se cobrará el <strong>100% del valor de la clase</strong> según la modalidad reservada (Driving / Putter & Approach: $35.000 ARS · Cancha: $43.000 ARS), abonable vía Mercado Pago.</p>
+        <p>Si cancelás con <strong>menos de 24hs</strong>, se cobrará el <strong>100% del valor de la clase</strong> según la modalidad reservada (Driving / Putter & Approach: $45.000 ARS · Cancha: $55.000 ARS), abonable vía Mercado Pago.</p>
       </div>
       <label class="m-terms-check">
         <input type="checkbox" id="chk-terms" onchange="toggleConfirmBtn()">
@@ -917,7 +943,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const ADMIN_EMAIL = 'epardogarcia2017@gmail.com';
 const VAPID_PUBLIC_KEY = 'BBllvCIim7nx3lwYvVP9HRfn8BGLb0Mq4VSJAkmoJJatj3d_h59o7FwAxAjwABUIU1jIFpOBTWBaE4wMMBM3q4o';
 const MP_ALIAS = 'ezequiel.pardo.32';
-const MP_PRICES = { driving:35000, putter:35000, cancha:43000 };
+const MP_PRICES = { driving:45000, putter:45000, cancha:55000 };
 
 // ============================================================
 // CONSTANTS
@@ -1662,7 +1688,7 @@ function openCancelModal(id,mod,dateDisp,slotLbl){
       const late=(classTime-new Date())/3600000<24;
       document.getElementById('cancel-warn').style.display=late?'block':'none';
       if(late){
-        const price=MP_PRICES[mod]||35000;
+        const price=MP_PRICES[mod]||45000;
         document.getElementById('mp-amount-txt').textContent='$'+price.toLocaleString('es-AR')+' ARS';
         document.getElementById('btn-cancel-yes').textContent='Cancelar (se cobrará $'+price.toLocaleString('es-AR')+')';
       } else {
@@ -1694,7 +1720,7 @@ async function doCancel(){
     if(isLate){
       // Show payment required step
       document.getElementById('cancel-warn').style.display='block';
-      const price=MP_PRICES[bkData?.modality]||35000;
+      const price=MP_PRICES[bkData?.modality]||45000;
       document.getElementById('mp-amount-txt').textContent='$'+price.toLocaleString('es-AR')+' ARS';
       // Change button to require payment confirmation
       const btn=document.getElementById('btn-cancel-yes');
@@ -1747,6 +1773,7 @@ async function loadPosts(){
         <div class="post-title">${p.title}</div>
         <div class="post-preview">${p.body}</div>
       </div>
+      ${postMediaHTML(p)}
       <div class="post-foot">
         <div class="post-meta">
           <span>${new Date(p.created_at).toLocaleDateString('es-AR')}</span>
@@ -1866,16 +1893,118 @@ async function submitComment(postId){
   }
 }
 
+// ---- Adjuntos del composer (foto / video / link) ----
+let _composerFile=null, _composerLink='';
+
+function ytId(url){ const m=String(url||'').match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/); return m?m[1]:null; }
+
+function toggleLinkInput(){
+  const i=document.getElementById('comp-link');
+  i.style.display = i.style.display==='none' ? 'block' : 'none';
+  if(i.style.display==='block') i.focus();
+}
+
+function onComposerFile(input){
+  const f=input.files && input.files[0];
+  if(!f) return;
+  const isVid=(f.type||'').startsWith('video');
+  const maxMB=isVid?50:10;
+  if(f.size > maxMB*1024*1024){
+    showToast(`El ${isVid?'video':'archivo'} es muy pesado (máx ${maxMB}MB).`+(isVid?' Para videos largos, mejor pegá un link de YouTube.':''),'warn');
+    input.value='';
+    return;
+  }
+  _composerFile=f; _composerLink='';
+  const l=document.getElementById('comp-link'); l.value=''; l.style.display='none';
+  renderComposerPreview();
+}
+
+function onComposerLink(v){
+  _composerLink=(v||'').trim();
+  if(_composerLink){
+    _composerFile=null;
+    document.getElementById('comp-file-img').value='';
+    document.getElementById('comp-file-vid').value='';
+  }
+  renderComposerPreview();
+}
+
+function clearComposerMedia(){
+  _composerFile=null; _composerLink='';
+  document.getElementById('comp-file-img').value='';
+  document.getElementById('comp-file-vid').value='';
+  const l=document.getElementById('comp-link'); l.value=''; l.style.display='none';
+  renderComposerPreview();
+}
+
+function renderComposerPreview(){
+  const pv=document.getElementById('comp-preview');
+  if(!pv) return;
+  if(_composerFile){
+    const isVid=(_composerFile.type||'').startsWith('video');
+    if(isVid){
+      pv.innerHTML=`<span>🎬</span><span style="word-break:break-all">${anEsc(_composerFile.name)}</span><button type="button" class="pv-x" onclick="clearComposerMedia()">✕</button>`;
+    } else {
+      pv.innerHTML=`<img src="${URL.createObjectURL(_composerFile)}"><span style="word-break:break-all">${anEsc(_composerFile.name)}</span><button type="button" class="pv-x" onclick="clearComposerMedia()">✕</button>`;
+    }
+    pv.style.display='flex';
+  } else if(_composerLink){
+    const yt=ytId(_composerLink);
+    pv.innerHTML=`<span>${yt?'▶️':'🔗'}</span><span style="word-break:break-all">${anEsc(_composerLink)}</span><button type="button" class="pv-x" onclick="clearComposerMedia()">✕</button>`;
+    pv.style.display='flex';
+  } else {
+    pv.style.display='none'; pv.innerHTML='';
+  }
+}
+
+// Devuelve el HTML del media de un post según su tipo
+function postMediaHTML(p){
+  if(!p.media_url) return '';
+  const u=anEsc(p.media_url);
+  if(p.media_type==='image') return `<img class="post-media-img" src="${u}" loading="lazy" alt="" onclick="window.open('${u}','_blank')">`;
+  if(p.media_type==='video') return `<video class="post-media-vid" controls preload="metadata" src="${u}"></video>`;
+  if(p.media_type==='youtube'){ const id=ytId(p.media_url); return id?`<div class="post-media-yt"><iframe src="https://www.youtube.com/embed/${id}" allowfullscreen loading="lazy"></iframe></div>`:`<a class="post-media-link" href="${u}" target="_blank" rel="noopener">▶️ Ver en YouTube</a>`; }
+  if(p.media_type==='link'){ let host=''; try{host=new URL(p.media_url).hostname.replace('www.','');}catch(e){} return `<a class="post-media-link" href="${u}" target="_blank" rel="noopener">🔗 ${anEsc(host||'Ver enlace')}</a>`; }
+  return '';
+}
+
 async function publishPost(){
   const title=document.getElementById('comp-title').value.trim();
   const body=document.getElementById('comp-body').value.trim();
   const type=document.getElementById('comp-type').value;
   if(!title||!body){showToast('Completá título y contenido','warn');return;}
-  const {error}=await sb.from('posts').insert({title,body,type,author_id:currentUser.id,likes:0});
-  if(error){showToast('Error al publicar','error');return;}
-  document.getElementById('comp-title').value='';
-  document.getElementById('comp-body').value='';
-  loadPosts();showToast('Publicación enviada','success');
+  const btn=document.querySelector('.btn-pub');
+  const oldTxt=btn?btn.textContent:'';
+  if(btn){btn.disabled=true; btn.textContent='Publicando...';}
+  let media_url=null, media_type=null;
+  try{
+    if(_composerFile){
+      if(btn) btn.textContent='Subiendo archivo...';
+      const ext=(_composerFile.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'');
+      const path=`${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+      const {error:upErr}=await sb.storage.from('community').upload(path,_composerFile,{cacheControl:'3600',upsert:false,contentType:_composerFile.type||undefined});
+      if(upErr) throw upErr;
+      const {data:pub}=sb.storage.from('community').getPublicUrl(path);
+      media_url=pub.publicUrl;
+      media_type=(_composerFile.type||'').startsWith('video')?'video':'image';
+    } else if(_composerLink){
+      media_url=_composerLink;
+      media_type=ytId(_composerLink)?'youtube':'link';
+    }
+    const row={title,body,type,author_id:currentUser.id,likes:0};
+    if(media_url){ row.media_url=media_url; row.media_type=media_type; }
+    const {error}=await sb.from('posts').insert(row);
+    if(error) throw error;
+    document.getElementById('comp-title').value='';
+    document.getElementById('comp-body').value='';
+    clearComposerMedia();
+    loadPosts();
+    showToast('Publicación enviada','success');
+  }catch(e){
+    showToast('Error al publicar: '+(e.message||'revisá el archivo'),'error');
+  }finally{
+    if(btn){btn.disabled=false; btn.textContent=oldTxt||'Publicar';}
+  }
 }
 
 function setCtab(btn){document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');}
@@ -1937,12 +2066,13 @@ async function loadAdminPanel(){
 // ============================================================
 let _anBookings=null;      // cache de reservas confirmadas
 let _anCancelled=0;        // cantidad de canceladas (para tasa)
+let _anCancelledList=[];   // detalle de canceladas (para el listado)
 let _anPeriod='month';     // week | month | all  (KPIs de cabecera)
 let _anWeekMetric='fac';   // fac | hor | alu     (gráfico semanal)
 let _anMonthMetric='fac';  // fac | hor | alu     (gráfico mensual)
 let _anSort={key:'clases',dir:-1}; // orden tabla alumnos
 
-function anPrice(k){ return (typeof MP_PRICES!=='undefined' && MP_PRICES[k]) ? MP_PRICES[k] : 35000; }
+function anPrice(k){ return (typeof MP_PRICES!=='undefined' && MP_PRICES[k]) ? MP_PRICES[k] : 45000; }
 function anMoney(n){ return '$'+Math.round(n||0).toLocaleString('es-AR'); }
 function anMoneyShort(n){ n=Math.round(n||0); if(n>=1000000) return '$'+(n/1000000).toFixed(1).replace('.0','')+'M'; if(n>=1000) return '$'+Math.round(n/1000)+'k'; return '$'+n; }
 function anEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -1958,12 +2088,18 @@ async function renderAdminAnalytics(){
   const {data:list}=await sb.from('bookings')
     .select('user_id,user_name,user_email,modality,modality_name,date_key,date_iso,slot,slot_label,nivel,created_at')
     .eq('status','confirmed');
-  const {count:canc}=await sb.from('bookings').select('*',{count:'exact',head:true}).eq('status','cancelled');
+  const {data:cancList}=await sb.from('bookings')
+    .select('user_id,user_name,user_email,modality,modality_name,date_key,date_iso,slot,slot_label,created_at')
+    .eq('status','cancelled');
   _anBookings=(list||[]).map(b=>{
     const d=anDkToDate(b.date_key)||new Date(b.date_iso);
     return {...b, _d:d, _price:anPrice(b.modality)};
   });
-  _anCancelled=canc||0;
+  _anCancelledList=(cancList||[]).map(b=>{
+    const d=anDkToDate(b.date_key)||new Date(b.date_iso);
+    return {...b, _d:d, _price:anPrice(b.modality)};
+  });
+  _anCancelled=_anCancelledList.length;
   drawAnalytics();
 }
 
@@ -1988,12 +2124,33 @@ function anMetricSeg(metric, fn){
   return `<div class="an-seg" style="margin-bottom:1rem">${b('fac','Valores')}${b('hor','Horas')}${b('alu','Alumnos')}</div>`;
 }
 
+// Bloque de clases canceladas (detalle, para llevar control)
+function anCanceladasHTML(){
+  const canc=[...(_anCancelledList||[])].sort((a,b)=>b._d-a._d);
+  let h=`<div class="an-block"><div class="an-head">Clases canceladas · ${canc.length}<span class="line"></span></div>`;
+  if(!canc.length){
+    h+=`<div class="an-empty">No hay clases canceladas. 🎉</div>`;
+  } else {
+    h+=`<div class="an-table-wrap"><table class="an-table">
+      <thead><tr><th>Alumno</th><th>Modalidad</th><th>Fecha de la clase</th></tr></thead>
+      <tbody>${canc.map(b=>`<tr>
+        <td class="name">${anEsc(b.user_name||b.user_email||'Alumno')}<div class="an-mods-mini">${anEsc(b.user_email||'')}</div></td>
+        <td><div class="an-mods-mini">${anEsc(b.modality_name||(MODS[b.modality]?MODS[b.modality].name:b.modality))}</div></td>
+        <td><div class="an-mods-mini">${anEsc(b._d.toLocaleDateString('es-AR'))} · ${anEsc(b.slot_label||(p2(b.slot)+':00'))}</div></td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+  return h+`</div>`;
+}
+
 function drawAnalytics(){
   const host=document.getElementById('admin-analytics');
   if(!host) return;
   const all=_anBookings||[];
   if(!all.length){
-    host.innerHTML='<div class="an-empty">Todavía no hay reservas confirmadas para generar estadísticas. Cuando tus alumnos reserven, vas a ver acá el detalle completo.</div>';
+    let empty='<div class="an-empty">Todavía no hay reservas confirmadas para generar estadísticas. Cuando tus alumnos reserven, vas a ver acá el detalle completo.</div>';
+    if(_anCancelledList && _anCancelledList.length) empty+=anCanceladasHTML();
+    host.innerHTML=empty;
     return;
   }
   const now=new Date(); now.setHours(0,0,0,0);
@@ -2102,6 +2259,9 @@ function drawAnalytics(){
       </tr>`).join('')}</tbody>
     </table></div>
   </div>`;
+
+  // Clases canceladas (detalle)
+  html+=anCanceladasHTML();
 
   // Otras métricas
   html+=`<div class="an-block">
