@@ -351,6 +351,13 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .post-media-yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .post-media-link{display:flex;align-items:center;gap:.5rem;padding:.8rem 1.1rem;background:var(--surface);border-top:1px solid var(--border);color:var(--gold);font-size:.8rem;text-decoration:none;word-break:break-all}
 .post-media-link:hover{background:rgba(200,168,75,.06)}
+.post-foot-right{display:flex;align-items:center;gap:.7rem}
+.post-act{background:none;border:none;cursor:pointer;font-size:.92rem;opacity:.65;padding:.1rem .25rem;transition:opacity .2s;line-height:1}
+.post-act:hover{opacity:1}
+.comp-editing{display:none;align-items:center;justify-content:space-between;gap:.6rem;background:rgba(200,168,75,.08);border:1px solid var(--gold);border-radius:var(--r);padding:.5rem .8rem;margin-bottom:.8rem;font-size:.72rem;color:var(--gold)}
+.comp-editing.on{display:flex}
+.comp-editing button{background:none;border:1px solid var(--border);color:var(--text-md);font-family:'Jost',sans-serif;font-size:.64rem;padding:.3rem .7rem;border-radius:var(--r);cursor:pointer}
+.comp-editing button:hover{border-color:var(--text-md);color:var(--text)}
 .side-lbl{font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--text-sm);margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem}
 .side-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
 .side-sec{margin-bottom:2rem}
@@ -691,6 +698,7 @@ footer{border-top:1px solid var(--border);padding:1.8rem 3rem;display:flex;align
   <div class="com-layout">
     <div class="com-feed">
       <div class="composer" id="composer">
+        <div class="comp-editing" id="comp-editing"><span>✏️ Editando publicación</span><button type="button" onclick="cancelEdit()">Cancelar edición</button></div>
         <div class="comp-tabs">
           <button class="ctab on" onclick="setCtab(this)">Texto</button>
           <button class="ctab" onclick="setCtab(this)">Tip del día</button>
@@ -1779,7 +1787,10 @@ async function loadPosts(){
           <span>${new Date(p.created_at).toLocaleDateString('es-AR')}</span>
           <button class="like-btn ${p.liked_by?.includes(currentUser?.id)?'liked':''}" onclick="toggleLike('${p.id}',this)">❤ ${p.likes||0}</button>
         </div>
-        <button class="comments-toggle" id="toggle-${p.id}" onclick="toggleComments('${p.id}')">💬 Comentarios</button>
+        <div class="post-foot-right">
+          ${isAdmin ? `<button class="post-act" title="Editar" onclick="editPost('${p.id}')">✏️</button><button class="post-act" title="Borrar" onclick="deletePost('${p.id}')">🗑️</button>` : ''}
+          <button class="comments-toggle" id="toggle-${p.id}" onclick="toggleComments('${p.id}')">💬 Comentarios</button>
+        </div>
       </div>
       <div class="comments-section" id="comments-${p.id}" style="display:none">
         <div class="comments-list" id="comments-list-${p.id}"></div>
@@ -1895,6 +1906,7 @@ async function submitComment(postId){
 
 // ---- Adjuntos del composer (foto / video / link) ----
 let _composerFile=null, _composerLink='';
+let _editingPostId=null, _editOrigMedia=null, _editMediaRemoved=false;
 
 function ytId(url){ const m=String(url||'').match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/); return m?m[1]:null; }
 
@@ -1934,6 +1946,7 @@ function clearComposerMedia(){
   document.getElementById('comp-file-img').value='';
   document.getElementById('comp-file-vid').value='';
   const l=document.getElementById('comp-link'); l.value=''; l.style.display='none';
+  if(_editingPostId && _editOrigMedia && !_editMediaRemoved){ _editMediaRemoved=true; }
   renderComposerPreview();
 }
 
@@ -1951,6 +1964,11 @@ function renderComposerPreview(){
   } else if(_composerLink){
     const yt=ytId(_composerLink);
     pv.innerHTML=`<span>${yt?'▶️':'🔗'}</span><span style="word-break:break-all">${anEsc(_composerLink)}</span><button type="button" class="pv-x" onclick="clearComposerMedia()">✕</button>`;
+    pv.style.display='flex';
+  } else if(_editOrigMedia && !_editMediaRemoved){
+    const t=_editOrigMedia.type;
+    const icon=t==='image'?'🖼️':t==='video'?'🎬':t==='youtube'?'▶️':'🔗';
+    pv.innerHTML=`<span>${icon}</span><span style="word-break:break-all">Archivo/enlace actual (se mantiene)</span><button type="button" class="pv-x" title="Quitar" onclick="clearComposerMedia()">✕</button>`;
     pv.style.display='flex';
   } else {
     pv.style.display='none'; pv.innerHTML='';
@@ -1973,9 +1991,10 @@ async function publishPost(){
   const body=document.getElementById('comp-body').value.trim();
   const type=document.getElementById('comp-type').value;
   if(!title||!body){showToast('Completá título y contenido','warn');return;}
+  const editing=!!_editingPostId;
   const btn=document.querySelector('.btn-pub');
   const oldTxt=btn?btn.textContent:'';
-  if(btn){btn.disabled=true; btn.textContent='Publicando...';}
+  if(btn){btn.disabled=true; btn.textContent=editing?'Guardando...':'Publicando...';}
   let media_url=null, media_type=null;
   try{
     if(_composerFile){
@@ -1990,21 +2009,117 @@ async function publishPost(){
     } else if(_composerLink){
       media_url=_composerLink;
       media_type=ytId(_composerLink)?'youtube':'link';
+    } else if(editing && _editOrigMedia && !_editMediaRemoved){
+      // mantener el media que ya tenía la publicación
+      media_url=_editOrigMedia.url; media_type=_editOrigMedia.type;
     }
-    const row={title,body,type,author_id:currentUser.id,likes:0};
-    if(media_url){ row.media_url=media_url; row.media_type=media_type; }
-    const {error}=await sb.from('posts').insert(row);
-    if(error) throw error;
-    document.getElementById('comp-title').value='';
-    document.getElementById('comp-body').value='';
-    clearComposerMedia();
-    loadPosts();
-    showToast('Publicación enviada','success');
+
+    if(editing){
+      const {error}=await sb.from('posts').update({title,body,type,media_url,media_type}).eq('id',_editingPostId);
+      if(error) throw error;
+      // si reemplazó/quitó el media original y era un archivo subido, lo borramos del storage
+      if(_editOrigMedia && (_editMediaRemoved || _composerFile || _composerLink) && _editOrigMedia.url!==media_url){
+        await deleteStorageFile(_editOrigMedia.url);
+      }
+      cancelEdit();
+      loadPosts();
+      showToast('Publicación actualizada','success');
+    } else {
+      const row={title,body,type,author_id:currentUser.id,likes:0};
+      if(media_url){ row.media_url=media_url; row.media_type=media_type; }
+      const {error}=await sb.from('posts').insert(row);
+      if(error) throw error;
+      document.getElementById('comp-title').value='';
+      document.getElementById('comp-body').value='';
+      clearComposerMedia();
+      loadPosts();
+      showToast('Publicación enviada','success');
+      notifyStudentsNewPost(title); // avisar a los alumnos del contenido nuevo
+    }
   }catch(e){
     showToast('Error al publicar: '+(e.message||'revisá el archivo'),'error');
   }finally{
-    if(btn){btn.disabled=false; btn.textContent=oldTxt||'Publicar';}
+    if(btn){btn.disabled=false; btn.textContent=editing?'Guardar cambios':(oldTxt&&oldTxt!=='Guardando...'&&oldTxt!=='Subiendo archivo...'&&oldTxt!=='Publicando...'?oldTxt:'Publicar');}
   }
+}
+
+// Cargar una publicación en el editor para modificarla (solo admin)
+async function editPost(id){
+  if(!isAdmin) return;
+  const {data:p}=await sb.from('posts').select('*').eq('id',id).single();
+  if(!p){ showToast('No se encontró la publicación','error'); return; }
+  _editingPostId=id;
+  _editOrigMedia = p.media_url ? {url:p.media_url, type:p.media_type} : null;
+  _editMediaRemoved=false;
+  _composerFile=null; _composerLink='';
+  document.getElementById('comp-title').value=p.title||'';
+  document.getElementById('comp-body').value=p.body||'';
+  const ts=document.getElementById('comp-type'); if(ts) ts.value=p.type||'tip';
+  document.getElementById('comp-file-img').value='';
+  document.getElementById('comp-file-vid').value='';
+  const l=document.getElementById('comp-link'); l.value=''; l.style.display='none';
+  document.getElementById('comp-editing').classList.add('on');
+  const btn=document.querySelector('.btn-pub'); if(btn) btn.textContent='Guardar cambios';
+  renderComposerPreview();
+  document.getElementById('composer').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+// Salir del modo edición y dejar el editor limpio
+function cancelEdit(){
+  _editingPostId=null; _editOrigMedia=null; _editMediaRemoved=false;
+  _composerFile=null; _composerLink='';
+  document.getElementById('comp-title').value='';
+  document.getElementById('comp-body').value='';
+  document.getElementById('comp-file-img').value='';
+  document.getElementById('comp-file-vid').value='';
+  const l=document.getElementById('comp-link'); if(l){l.value=''; l.style.display='none';}
+  const ce=document.getElementById('comp-editing'); if(ce) ce.classList.remove('on');
+  const btn=document.querySelector('.btn-pub'); if(btn) btn.textContent='Publicar';
+  renderComposerPreview();
+}
+
+// Borrar una publicación completa: comentarios + archivo + post (solo admin)
+async function deletePost(id){
+  if(!isAdmin) return;
+  if(!confirm('¿Borrar esta publicación? Se eliminan también sus comentarios. Esta acción no se puede deshacer.')) return;
+  try{
+    const {data:p}=await sb.from('posts').select('media_url,media_type').eq('id',id).single();
+    await sb.from('comments').delete().eq('post_id',id);
+    if(p && p.media_url) await deleteStorageFile(p.media_url);
+    const {error}=await sb.from('posts').delete().eq('id',id);
+    if(error) throw error;
+    if(_editingPostId===id) cancelEdit();
+    loadPosts();
+    showToast('Publicación borrada','success');
+  }catch(e){
+    showToast('Error al borrar: '+(e.message||''),'error');
+  }
+}
+
+// Borra un archivo del bucket "community" a partir de su URL pública
+async function deleteStorageFile(url){
+  try{
+    const marker='/community/';
+    const i=String(url||'').indexOf(marker);
+    if(i===-1) return; // no es un archivo subido (ej: link o youtube)
+    const path=decodeURIComponent(url.slice(i+marker.length).split('?')[0]);
+    if(path) await sb.storage.from('community').remove([path]);
+  }catch(e){ /* si falla el borrado del archivo, no bloquea */ }
+}
+
+// Avisar por notificación push a los alumnos que tienen notificaciones activas
+async function notifyStudentsNewPost(postTitle){
+  try{
+    await fetch(SUPABASE_URL+'/functions/v1/notify-all', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY},
+      body: JSON.stringify({
+        title:'📣 Nuevo en EP Golf Coach',
+        body: postTitle || 'Se publicó contenido nuevo en la comunidad',
+        tag:'nuevo-contenido'
+      })
+    });
+  }catch(e){ console.log('notifyStudentsNewPost error:', e); }
 }
 
 function setCtab(btn){document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('on'));btn.classList.add('on');}
