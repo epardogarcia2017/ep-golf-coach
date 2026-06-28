@@ -60,6 +60,11 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .btn-auth{width:100%;background:var(--gold);color:var(--black);border:none;font-family:'Jost',sans-serif;font-size:.73rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;padding:.82rem;cursor:pointer;border-radius:var(--r);transition:all .2s;margin-top:.3rem}
 .btn-auth:hover{background:var(--gold-lt)}
 .auth-error{font-size:.74rem;color:var(--red);text-align:center;min-height:1.2rem}
+.auth-ok{font-size:.78rem;color:var(--green);text-align:center}
+.auth-help{font-size:.86rem;color:var(--text-md);line-height:1.55;margin:.2rem 0 .4rem;text-align:center}
+.auth-link-row{text-align:center;margin-top:.3rem}
+.auth-link{background:none;border:none;color:var(--gold);font-family:'Jost',sans-serif;font-size:.82rem;cursor:pointer;padding:.4rem;text-decoration:underline;opacity:.9}
+.auth-link:hover{opacity:1}
 .auth-switch{font-size:.72rem;color:var(--text-xs);text-align:center;margin-top:.5rem}
 .auth-switch span{color:var(--gold);cursor:pointer}
 .auth-switch span:hover{color:var(--gold-lt)}
@@ -84,7 +89,7 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 #tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(8,8,8,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);height:62px;grid-template-columns:repeat(4,1fr);align-items:stretch}
 .tab-item{background:none;border:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding:.4rem 0;position:relative;width:100%}
 .tab-icon{font-size:1.2rem;line-height:1;transition:transform .2s var(--ease)}
-.tab-label{font-family:'Jost',sans-serif;font-size:.62rem;letter-spacing:.09em;text-transform:uppercase;color:var(--text-xs);transition:color .2s}
+.tab-label{font-family:'Jost',sans-serif;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text-sm);transition:color .2s}
 .tab-item.on .tab-label{color:var(--gold)}
 .tab-item.on .tab-icon{transform:translateY(-2px)}
 .tab-notif{position:absolute;top:7px;right:calc(50% - 16px);width:7px;height:7px;border-radius:50%;background:var(--gold);border:1.5px solid var(--black);display:none;animation:pulse 2s infinite}
@@ -158,7 +163,7 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .cal-nav:hover{border-color:var(--gold);color:var(--gold)}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .cal-dow{text-align:center;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-xs);padding:.45rem 0}
-.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:.77rem;border-radius:var(--r);cursor:default;transition:all .16s;border:1px solid transparent;position:relative}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:.9rem;border-radius:var(--r);cursor:default;transition:all .16s;border:1px solid transparent;position:relative}
 .cal-day.avail{cursor:pointer;color:var(--text-md)}
 .cal-day.avail:hover{border-color:var(--border-md);color:var(--text);background:var(--surface)}
 .cal-day.sel{background:var(--gold);color:var(--black);font-weight:600;border-color:var(--gold)}
@@ -170,7 +175,7 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 /* SLOTS */
 .slots-hdr{font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--gold);margin-bottom:.95rem;min-height:1.4rem}
 .slots-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px}
-.slot{text-align:center;padding:.6rem .3rem;font-size:.82rem;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .16s;color:var(--text-sm);font-family:'Jost',sans-serif}
+.slot{text-align:center;padding:.7rem .3rem;font-size:.95rem;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .16s;color:var(--text-sm);font-family:'Jost',sans-serif}
 .slot:hover{border-color:var(--border-strong);color:var(--text);background:var(--surface)}
 .slot.sel{background:var(--gold);color:var(--black);border-color:var(--gold);font-weight:600;box-shadow:0 0 12px rgba(200,168,75,.22)}
 .slot.taken{background:var(--panel);color:var(--text-xs);cursor:not-allowed;border-color:transparent;text-decoration:line-through;opacity:.5}
@@ -253,7 +258,7 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .m-acts{display:flex;gap:.7rem}
 .btn-m-cancel{flex:1;background:none;border:1px solid var(--border);color:var(--text-sm);font-family:'Jost',sans-serif;font-size:.67rem;letter-spacing:.12em;text-transform:uppercase;padding:.65rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
 .btn-m-cancel:hover{border-color:rgba(192,57,43,.5);color:var(--red)}
-.btn-m-confirm{flex:2;background:var(--gold);color:var(--black);border:none;font-family:'Jost',sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;padding:.65rem;cursor:pointer;border-radius:var(--r);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.btn-m-confirm{flex:2;background:var(--gold);color:var(--black);border:none;font-family:'Jost',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.75rem;cursor:pointer;border-radius:var(--r);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
 .btn-m-confirm:hover{background:var(--gold-lt)}
 .btn-m-confirm.done{background:var(--green);pointer-events:none}
 .btn-ics{width:100%;background:none;border:1px solid var(--border-md);color:var(--gold);font-family:'Jost',sans-serif;font-size:.66rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;padding:.62rem;cursor:pointer;border-radius:var(--r);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
@@ -271,9 +276,9 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .mp-info-row{font-size:.8rem;color:var(--text);margin-bottom:.2rem}
 .mp-info-note{font-size:.7rem;color:var(--text-sm);margin-top:.4rem}
 .cancel-foot{padding:1rem 1.6rem 1.5rem;display:flex;gap:.7rem;border-top:1px solid var(--border)}
-.btn-cancel-no{flex:1;background:none;border:1px solid var(--border);color:var(--text-sm);font-family:'Jost',sans-serif;font-size:.67rem;letter-spacing:.1em;text-transform:uppercase;padding:.62rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
+.btn-cancel-no{flex:1;background:none;border:1px solid var(--border);color:var(--text-md);font-family:'Jost',sans-serif;font-size:.8rem;letter-spacing:.07em;text-transform:uppercase;padding:.72rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
 .btn-cancel-no:hover{border-color:var(--border-md);color:var(--text)}
-.btn-cancel-yes{flex:2;background:none;border:1px solid rgba(192,57,43,.4);color:var(--red);font-family:'Jost',sans-serif;font-size:.68rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;padding:.62rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
+.btn-cancel-yes{flex:2;background:none;border:1px solid rgba(192,57,43,.45);color:var(--red);font-family:'Jost',sans-serif;font-size:.82rem;font-weight:500;letter-spacing:.09em;text-transform:uppercase;padding:.72rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
 .btn-cancel-yes:hover{background:rgba(192,57,43,.08)}
 
 
@@ -385,18 +390,18 @@ body{font-family:'Jost',sans-serif;background:var(--black);color:var(--text);min
 .bk-left{display:flex;align-items:center;gap:1.1rem}
 .bk-datebox{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.45rem .65rem;text-align:center;flex-shrink:0;min-width:46px}
 .bk-day{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:500;color:var(--gold);line-height:1}
-.bk-mon{font-size:.55rem;letter-spacing:.09em;text-transform:uppercase;color:var(--text-xs);margin-top:1px}
-.bk-mod{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.18rem}
-.bk-when{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--text)}
-.bk-nivel{font-size:.78rem;color:var(--text-sm);margin-top:.08rem}
+.bk-mon{font-size:.64rem;letter-spacing:.09em;text-transform:uppercase;color:var(--text-sm);margin-top:1px}
+.bk-mod{font-size:.86rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:.22rem}
+.bk-when{font-family:'Cormorant Garamond',serif;font-size:1.32rem;color:var(--text)}
+.bk-nivel{font-size:.9rem;color:var(--text-sm);margin-top:.1rem}
 .bk-right{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap}
-.badge{display:inline-flex;align-items:center;font-size:.6rem;letter-spacing:.09em;text-transform:uppercase;padding:.24rem .65rem;border-radius:var(--r)}
+.badge{display:inline-flex;align-items:center;font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;padding:.3rem .7rem;border-radius:var(--r)}
 .b-conf{background:rgba(39,174,96,.1);color:var(--green);border:1px solid rgba(39,174,96,.22)}
 .b-real{background:rgba(100,100,100,.12);color:var(--text-sm);border:1px solid rgba(100,100,100,.2)}
-.btn-bk-ics{background:none;border:1px solid var(--border);color:var(--text-xs);font-family:'Jost',sans-serif;font-size:.61rem;letter-spacing:.09em;text-transform:uppercase;padding:.27rem .65rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
+.btn-bk-ics{background:none;border:1px solid var(--border);color:var(--text-sm);font-family:'Jost',sans-serif;font-size:.82rem;letter-spacing:.05em;text-transform:uppercase;padding:.45rem .9rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
 .btn-bk-ics:hover{border-color:var(--border-md);color:var(--gold)}
-.btn-bk-canc{background:none;border:1px solid rgba(192,57,43,.2);color:rgba(192,57,43,.55);font-family:'Jost',sans-serif;font-size:.61rem;letter-spacing:.09em;text-transform:uppercase;padding:.27rem .65rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
-.btn-bk-canc:hover{border-color:rgba(192,57,43,.5);color:var(--red)}
+.btn-bk-canc{background:none;border:1px solid rgba(192,57,43,.35);color:var(--red);font-family:'Jost',sans-serif;font-size:.82rem;letter-spacing:.05em;text-transform:uppercase;padding:.45rem .9rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
+.btn-bk-canc:hover{border-color:rgba(192,57,43,.6);background:rgba(192,57,43,.08)}
 .empty-state{text-align:center;padding:4.5rem 2rem}
 .es-icon{font-size:2.8rem;opacity:.12;margin-bottom:1rem}
 .es-h{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:300;color:var(--text-md);margin-bottom:.4rem}
@@ -550,6 +555,7 @@ footer{border-top:1px solid var(--border);padding:1.8rem 3rem;display:flex;align
           <div class="fg"><label>Contraseña</label><input id="l-pass" type="password" placeholder="••••••••"></div>
           <div class="auth-error" id="login-error"></div>
           <button class="btn-auth" onclick="doLogin()">Ingresar →</button>
+          <div class="auth-link-row"><button type="button" class="auth-link" onclick="showRecover()">¿Olvidaste tu contraseña?</button></div>
         </div>
       </div>
       <!-- REGISTER -->
@@ -578,6 +584,27 @@ footer{border-top:1px solid var(--border);padding:1.8rem 3rem;display:flex;align
           </div>
           <div class="auth-error" id="register-error"></div>
           <button class="btn-auth" onclick="doRegister()">Crear cuenta →</button>
+        </div>
+      </div>
+      <!-- RECUPERAR CONTRASEÑA -->
+      <div id="form-recover" style="display:none">
+        <div class="auth-form">
+          <p class="auth-help">Ingresá tu email y te mandamos un enlace para crear una nueva contraseña. No depende de nadie: lo hacés vos.</p>
+          <div class="fg"><label>Email</label><input id="rec-email" type="email" placeholder="email@ejemplo.com"></div>
+          <div class="auth-error" id="recover-error"></div>
+          <div class="auth-ok" id="recover-ok"></div>
+          <button class="btn-auth" onclick="doSendRecovery()">Enviar enlace →</button>
+          <div class="auth-link-row"><button type="button" class="auth-link" onclick="showLoginForm()">← Volver a ingresar</button></div>
+        </div>
+      </div>
+      <!-- NUEVA CONTRASEÑA (al volver desde el email) -->
+      <div id="form-newpass" style="display:none">
+        <div class="auth-form">
+          <p class="auth-help">Creá tu nueva contraseña para EP Golf Coach.</p>
+          <div class="fg"><label>Nueva contraseña</label><input id="np-pass" type="password" placeholder="Mínimo 6 caracteres"></div>
+          <div class="fg"><label>Repetir contraseña</label><input id="np-pass2" type="password" placeholder="Repetí la contraseña"></div>
+          <div class="auth-error" id="newpass-error"></div>
+          <button class="btn-auth" onclick="doSetNewPassword()">Guardar contraseña →</button>
         </div>
       </div>
     </div>
@@ -979,6 +1006,8 @@ let S = {mod:null,selDate:null,selSlot:null,calY:new Date().getFullYear(),calM:n
 let lastBooking = null;
 let pendingCancelId = null;
 let postTitles = {};
+let _appInitedFor = null;   // evita re-inicializar la app en cada refresh de token (anti-traba)
+let _adminChannel = null;   // canal de realtime del admin (para no duplicarlo)
 
 // ============================================================
 // ICON
@@ -1001,16 +1030,27 @@ window.addEventListener('load', async ()=>{
     });
   }
   // Auth state listener
-  sb.auth.onAuthStateChange(async (event, session)=>{
-    if(session?.user){
-      currentUser = session.user;
-      await loadUserProfile();
-      showApp();
-    } else {
-      currentUser = null;
-      isAdmin = false;
-      showAuthScreen();
-    }
+  sb.auth.onAuthStateChange((event, session)=>{
+    // Diferimos el trabajo con setTimeout para evitar que el cliente de Supabase
+    // se trabe (no se deben hacer llamadas await a Supabase dentro de este callback).
+    setTimeout(async ()=>{
+      if(event === 'PASSWORD_RECOVERY'){ openRecoveryScreen(); return; }
+      if(session?.user){
+        currentUser = session.user;
+        // Inicializar la app UNA sola vez por sesión: si el token se refresca
+        // (pasa solo, cada tanto), no volvemos a re-cargar todo ni a re-suscribir.
+        if(_appInitedFor === session.user.id) return;
+        _appInitedFor = session.user.id;
+        await loadUserProfile();
+        showApp();
+      } else {
+        _appInitedFor = null;
+        currentUser = null;
+        isAdmin = false;
+        if(_adminChannel){ try{ sb.removeChannel(_adminChannel); }catch(e){} _adminChannel=null; }
+        showAuthScreen();
+      }
+    }, 0);
   });
   // Check existing session
   const {data:{session}} = await sb.auth.getSession();
@@ -1076,8 +1116,9 @@ function applyAdminUI(){
 }
 
 function subscribeAdminRealtime(){
+  if(_adminChannel) return; // ya suscrito: no duplicar (evita trabas y avisos repetidos)
   // Listen for new bookings in realtime
-  sb.channel('admin-bookings')
+  _adminChannel = sb.channel('admin-bookings')
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'bookings'},payload=>{
       const bk = payload.new;
       if(bk.user_email !== ADMIN_EMAIL){
@@ -1157,6 +1198,9 @@ function updateNavUI(){
 // AUTH
 // ============================================================
 function switchAuthTab(tab){
+  const tabs=document.querySelector('.auth-tabs'); if(tabs) tabs.style.display='flex';
+  const fr=document.getElementById('form-recover'); if(fr) fr.style.display='none';
+  const fn=document.getElementById('form-newpass'); if(fn) fn.style.display='none';
   document.getElementById('tab-login').classList.toggle('on', tab==='login');
   document.getElementById('tab-register').classList.toggle('on', tab==='register');
   document.getElementById('form-login').style.display = tab==='login'?'block':'none';
@@ -1205,6 +1249,79 @@ async function doSignOut(){
   await sb.auth.signOut();
   currentUser=null;isAdmin=false;userProfile=null;
   showToast('Sesión cerrada','');
+}
+
+// ============================================================
+// RECUPERO DE CONTRASEÑA (sin depender del administrador)
+// ============================================================
+function hideAuthForms(){
+  ['form-login','form-register','form-recover','form-newpass'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='none';
+  });
+}
+
+// Pantalla para pedir el enlace de recupero
+function showRecover(){
+  const tabs=document.querySelector('.auth-tabs'); if(tabs) tabs.style.display='none';
+  hideAuthForms();
+  document.getElementById('recover-error').textContent='';
+  document.getElementById('recover-ok').textContent='';
+  const le=document.getElementById('l-email').value.trim();
+  if(le) document.getElementById('rec-email').value=le;
+  document.getElementById('form-recover').style.display='block';
+}
+
+// Volver a la pantalla de ingreso
+function showLoginForm(){
+  switchAuthTab('login');
+}
+
+// Enviar el email con el enlace de recupero
+async function doSendRecovery(){
+  const email=document.getElementById('rec-email').value.trim();
+  const errEl=document.getElementById('recover-error');
+  const okEl=document.getElementById('recover-ok');
+  errEl.textContent=''; okEl.textContent='';
+  if(!email){ errEl.textContent='Ingresá tu email'; return; }
+  const btn=document.querySelector('#form-recover .btn-auth');
+  btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});
+  btn.innerHTML='Enviar enlace →'; btn.disabled=false;
+  if(error){ errEl.textContent='No se pudo enviar. Revisá el email e intentá de nuevo.'; return; }
+  okEl.textContent='¡Listo! Revisá tu email (y la carpeta de spam) y abrí el enlace para crear tu nueva contraseña.';
+}
+
+// Se abre cuando el usuario vuelve desde el enlace del email (evento PASSWORD_RECOVERY)
+function openRecoveryScreen(){
+  document.getElementById('loader').classList.add('out');
+  document.getElementById('auth-screen').classList.remove('hidden');
+  const tabs=document.querySelector('.auth-tabs'); if(tabs) tabs.style.display='none';
+  hideAuthForms();
+  document.getElementById('newpass-error').textContent='';
+  document.getElementById('form-newpass').style.display='block';
+}
+
+// Guardar la nueva contraseña
+async function doSetNewPassword(){
+  const p1=document.getElementById('np-pass').value;
+  const p2=document.getElementById('np-pass2').value;
+  const errEl=document.getElementById('newpass-error');
+  errEl.textContent='';
+  if(p1.length<6){ errEl.textContent='La contraseña debe tener al menos 6 caracteres'; return; }
+  if(p1!==p2){ errEl.textContent='Las contraseñas no coinciden'; return; }
+  const btn=document.querySelector('#form-newpass .btn-auth');
+  btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
+  const {data:upd,error}=await sb.auth.updateUser({password:p1});
+  btn.innerHTML='Guardar contraseña →'; btn.disabled=false;
+  if(error){ errEl.textContent='No se pudo guardar: '+error.message; return; }
+  showToast('¡Contraseña actualizada! Ya estás dentro.','success');
+  // Entrar a la app (el guard evita que el evento USER_UPDATED lo haga dos veces)
+  if(upd?.user && _appInitedFor!==upd.user.id){
+    currentUser=upd.user;
+    _appInitedFor=upd.user.id;
+    await loadUserProfile();
+    showApp();
+  }
 }
 
 // ============================================================
@@ -1686,12 +1803,20 @@ async function loadAndRenderBookings(filter){
   const today=new Date();today.setHours(0,0,0,0);
   if(filter==='upcoming') query=query.gte('date_iso',today.toISOString());
   if(filter==='past') query=query.lt('date_iso',today.toISOString());
-  query=query.order('date_iso',{ascending:false});
   const {data:list,error}=await query;
   if(error||!list?.length){
     con.innerHTML=`<div class="empty-state"><div class="es-icon">📅</div><div class="es-h">Sin clases ${filter==='upcoming'?'próximas':filter==='past'?'realizadas':''}</div><div class="es-p">${filter!=='past'?'Reservá desde la sección Reservar':''}</div></div>`;
     return;
   }
+  // Orden claro cuando hay varias clases: las PRÓXIMAS primero (de la más cercana a la
+  // más lejana) y después las realizadas (de la más reciente a la más antigua).
+  list.sort((a,b)=>{
+    const da=new Date(a.date_iso), db=new Date(b.date_iso);
+    const fa=da>=today, fb=db>=today;
+    if(fa&&fb) return da-db;
+    if(!fa&&!fb) return db-da;
+    return fa?-1:1;
+  });
   con.innerHTML='<div class="bk-grid">'+list.map(b=>{
     const dt=new Date(b.date_iso);
     const past=dt<today;
